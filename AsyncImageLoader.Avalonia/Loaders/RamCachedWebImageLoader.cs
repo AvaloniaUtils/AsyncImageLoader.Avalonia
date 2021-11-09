@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 
-namespace AsyncImageLoader.Avalonia {
+namespace AsyncImageLoader.Loaders {
     /// <summary>
     /// Provides memory cached way to asynchronously load images for <see cref="ImageLoader"/>
     /// Can be used as base class if you want to create custom in memory caching

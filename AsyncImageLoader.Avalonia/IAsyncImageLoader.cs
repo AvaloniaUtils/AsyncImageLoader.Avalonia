@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 
-namespace AsyncImageLoader.Avalonia {
+namespace AsyncImageLoader {
     public interface IAsyncImageLoader {
         /// <summary>
         /// Loads image

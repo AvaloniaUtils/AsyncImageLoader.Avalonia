@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
+using AsyncImageLoader.Loaders;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
 
-namespace AsyncImageLoader.Avalonia {
+namespace AsyncImageLoader {
     public static class ImageLoader {
         public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
         static ImageLoader() {
