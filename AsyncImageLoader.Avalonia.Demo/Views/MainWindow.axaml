@@ -1,0 +1,21 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:AsyncImageLoader.Avalonia.Demo.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:avalonia="clr-namespace:AsyncImageLoader.Avalonia;assembly=AsyncImageLoader.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="AsyncImageLoader.Avalonia.Demo.Views.MainWindow"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="AsyncImageLoader.Avalonia.Demo">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+    <UniformGrid Name="ImageContainer">
+        <Image avalonia:ImageLoader.SourceUrl="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat0.jpg" />
+        <Image avalonia:ImageLoader.SourceUrl="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat1.jpg" />
+        <Image avalonia:ImageLoader.SourceUrl="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat2.jpg" />
+        <Image avalonia:ImageLoader.SourceUrl="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat3.jpg" />
+    </UniformGrid>
+</Window>
