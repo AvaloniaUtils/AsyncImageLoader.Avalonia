@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
@@ -10,13 +11,9 @@ namespace AsyncImageLoader.Loaders {
     /// </summary>
     public class DiskCachedWebImageLoader : RamCachedWebImageLoader {
         private string _cacheFolder;
-        /// <summary>
-        /// Create instance of <see cref="DiskCachedWebImageLoader"/>
-        /// </summary>
-        /// <param name="cacheFolder">Default folder for caching</param>
-        public DiskCachedWebImageLoader(string cacheFolder = "Cache/Images/") {
-            _cacheFolder = cacheFolder;
-        }
+
+        public DiskCachedWebImageLoader(string cacheFolder = "Cache/Images/") { }
+        public DiskCachedWebImageLoader(HttpClient httpClient, string cacheFolder = "Cache/Images/") : base(httpClient) { }
 
         /// <inheritdoc />
         protected override Task<Bitmap?> LoadFromGlobalCache(string url) {

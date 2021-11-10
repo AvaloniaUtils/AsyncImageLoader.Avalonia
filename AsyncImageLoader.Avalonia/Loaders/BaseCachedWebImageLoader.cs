@@ -10,8 +10,18 @@ namespace AsyncImageLoader.Loaders {
     /// Can be used as base class if you want to create custom caching mechanism
     /// </summary>
     public class BaseWebImageLoader : IAsyncImageLoader {
-        protected static HttpClient HttpClient { get; } = new HttpClient();
-        
+        private readonly bool _shouldDisposeHttpClient;
+
+        public BaseWebImageLoader() : this(new HttpClient()) {
+            _shouldDisposeHttpClient = true;
+        }
+
+        public BaseWebImageLoader(HttpClient httpClient) {
+            HttpClient = httpClient;
+        }
+
+        protected HttpClient HttpClient { get; }
+
         /// <inheritdoc />
         public virtual Task<IBitmap?> ProvideImageAsync(string url) {
             return LoadAsync(url);
@@ -29,7 +39,7 @@ namespace AsyncImageLoader.Loaders {
             try {
                 var externalBytes = await LoadDataFromExternalAsync(url);
                 if (externalBytes == null) return null;
-                
+
                 using var memoryStream = new MemoryStream(externalBytes);
                 var bitmap = new Bitmap(memoryStream);
                 await SaveToGlobalCache(url, externalBytes);
@@ -39,7 +49,7 @@ namespace AsyncImageLoader.Loaders {
                 return null;
             }
         }
-        
+
         /// <summary>
         /// Receives image bytes from an internal source (for example, from the disk).
         /// This data will be NOT cached globally (because it is assumed that it is already in internal source us and does not require global caching)
@@ -51,10 +61,10 @@ namespace AsyncImageLoader.Loaders {
                 return Task.FromResult(new Bitmap(url))!;
             }
             catch (Exception) {
-                return Task.FromResult<Bitmap?>(null);;
+                return Task.FromResult<Bitmap?>(null);
             }
         }
-        
+
         /// <summary>
         /// Receives image bytes from an external source (for example, from the Internet).
         /// This data will be cached globally (if required by the current implementation)
@@ -89,6 +99,12 @@ namespace AsyncImageLoader.Loaders {
         protected virtual Task SaveToGlobalCache(string url, byte[] imageBytes) {
             // Current implementation does not provide global caching
             return Task.CompletedTask;
+        }
+
+        public void Dispose() {
+            if (_shouldDisposeHttpClient) {
+                HttpClient.Dispose();
+            }
         }
     }
 }

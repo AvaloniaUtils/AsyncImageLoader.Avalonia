@@ -1,8 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 
 namespace AsyncImageLoader {
-    public interface IAsyncImageLoader {
+    public interface IAsyncImageLoader : IDisposable {
         /// <summary>
         /// Loads image
         /// </summary>

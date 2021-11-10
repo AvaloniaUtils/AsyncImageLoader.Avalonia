@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 
@@ -9,6 +10,9 @@ namespace AsyncImageLoader.Loaders {
     /// </summary>
     public class RamCachedWebImageLoader : BaseWebImageLoader {
         private readonly ConcurrentDictionary<string, Task<IBitmap?>> _memoryCache = new();
+
+        public RamCachedWebImageLoader() { }
+        public RamCachedWebImageLoader(HttpClient httpClient) : base(httpClient) { }
 
         /// <inheritdoc />
         public override async Task<IBitmap?> ProvideImageAsync(string url) {

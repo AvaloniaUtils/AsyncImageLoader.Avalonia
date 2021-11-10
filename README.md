@@ -37,7 +37,7 @@ Note: The first time you will need to import the AsyncImageLoader namespace to y
 
 ## Loaders
 ImageLoader will use instance of [IImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/IAsyncImageLoader.cs) for serving your requests.  
-You can change the loader used by setting new one to the [ImageLoader.AsyncImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/ImageLoader.cs#L10) property. 
+You can change the loader used by setting new one to the [ImageLoader.AsyncImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/ImageLoader.cs#L10) property. Do not forget to Dispose previous loader.  
 There are several loaders available out of the box: 
 - [BaseWebImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/Loaders/BaseCachedWebImageLoader.cs) - Provides non cached way to asynchronously load images without caching. Can be used as base class for custom loaders you dont want caching in any way.
 - [RamCachedWebImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/Loaders/RamCachedWebImageLoader.cs) - This is inheritor if BaseWebImageLoader with in memory images caching. Can be used as base class for custom loaders you want only inmemory caching.
