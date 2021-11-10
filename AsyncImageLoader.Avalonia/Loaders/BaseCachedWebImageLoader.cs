@@ -108,8 +108,21 @@ namespace AsyncImageLoader.Loaders {
             return Task.CompletedTask;
         }
 
-        public void Dispose() {
-            if (_shouldDisposeHttpClient) {
+        ~BaseWebImageLoader()
+        {
+            Dispose(false);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing && _shouldDisposeHttpClient)
+            {
                 HttpClient.Dispose();
             }
         }
