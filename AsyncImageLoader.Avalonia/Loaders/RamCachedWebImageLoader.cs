@@ -11,8 +11,10 @@ namespace AsyncImageLoader.Loaders {
     public class RamCachedWebImageLoader : BaseWebImageLoader {
         private readonly ConcurrentDictionary<string, Task<IBitmap?>> _memoryCache = new();
 
+        /// <inheritdoc />
         public RamCachedWebImageLoader() { }
-        public RamCachedWebImageLoader(HttpClient httpClient) : base(httpClient) { }
+        /// <inheritdoc />
+        public RamCachedWebImageLoader(HttpClient httpClient, bool disposeHttpClient) : base(httpClient, disposeHttpClient) { }
 
         /// <inheritdoc />
         public override async Task<IBitmap?> ProvideImageAsync(string url) {

@@ -12,12 +12,19 @@ namespace AsyncImageLoader.Loaders {
     public class BaseWebImageLoader : IAsyncImageLoader {
         private readonly bool _shouldDisposeHttpClient;
 
-        public BaseWebImageLoader() : this(new HttpClient()) {
-            _shouldDisposeHttpClient = true;
-        }
-
-        public BaseWebImageLoader(HttpClient httpClient) {
+        /// <summary>
+        /// Initializes a new instance with new <see cref="HttpClient"/> instance
+        /// </summary>
+        public BaseWebImageLoader() : this(new HttpClient(null, true), true) { }
+        
+        /// <summary>
+        /// Initializes a new instance with the provided <see cref="HttpClient"/>, and specifies whether that <see cref="HttpClient"/> should be disposed when this instance is disposed.
+        /// </summary>
+        /// <param name="httpClient">The HttpMessageHandler responsible for processing the HTTP response messages.</param>
+        /// <param name="disposeHttpClient">true if the inner handler should be disposed of by Dispose; false if you intend to reuse the HttpClient.</param>
+        public BaseWebImageLoader(HttpClient httpClient, bool disposeHttpClient) {
             HttpClient = httpClient;
+            _shouldDisposeHttpClient = disposeHttpClient;
         }
 
         protected HttpClient HttpClient { get; }

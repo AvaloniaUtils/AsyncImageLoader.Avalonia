@@ -15,7 +15,8 @@ namespace AsyncImageLoader.Loaders {
         public DiskCachedWebImageLoader(string cacheFolder = "Cache/Images/") {
             _cacheFolder = cacheFolder;
         }
-        public DiskCachedWebImageLoader(HttpClient httpClient, string cacheFolder = "Cache/Images/") : base(httpClient) {
+        public DiskCachedWebImageLoader(HttpClient httpClient, bool disposeHttpClient, string cacheFolder = "Cache/Images/") 
+            : base(httpClient, disposeHttpClient) {
             _cacheFolder = cacheFolder;
         }
 
