@@ -11,6 +11,9 @@ Features:
 ## Getting started
 
 1. Install `AsyncImageLoader.Avalonia` [nuget package](https://www.nuget.org/packages/AsyncImageLoader.Avalonia/)
+```
+dotnet add package AsyncImageLoader.Avalonia
+```
 2. Start using
 
 ## Using
