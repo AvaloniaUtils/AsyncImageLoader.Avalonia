@@ -10,10 +10,14 @@ namespace AsyncImageLoader.Loaders {
     /// Can be used as base class if you want to create custom caching mechanism
     /// </summary>
     public class DiskCachedWebImageLoader : RamCachedWebImageLoader {
-        private string _cacheFolder;
+        private readonly string _cacheFolder;
 
-        public DiskCachedWebImageLoader(string cacheFolder = "Cache/Images/") { }
-        public DiskCachedWebImageLoader(HttpClient httpClient, string cacheFolder = "Cache/Images/") : base(httpClient) { }
+        public DiskCachedWebImageLoader(string cacheFolder = "Cache/Images/") {
+            _cacheFolder = cacheFolder;
+        }
+        public DiskCachedWebImageLoader(HttpClient httpClient, string cacheFolder = "Cache/Images/") : base(httpClient) {
+            _cacheFolder = cacheFolder;
+        }
 
         /// <inheritdoc />
         protected override Task<Bitmap?> LoadFromGlobalCache(string url) {
