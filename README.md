@@ -27,6 +27,8 @@ Should turn into:
 ```xaml
 <Image asyncImageLoader:ImageLoader.Source="https://mycoolwebsite.io/image.jpg" />
 ```
+Also you can use `ImageLoader.IsLoading` readonly attached property that indicates whether the load is in progress or not.  
+
 Note: The first time you will need to import the AsyncImageLoader namespace to your xaml file. Usually your IDE should [suggest it automatically](https://user-images.githubusercontent.com/29896317/140953397-00028365-5b93-4e6c-b470-094a555870c8.png). The root element in the file will be [like this](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia.Demo/Views/MainWindow.axaml#L6):
 ```xaml
 <Window ...
