@@ -24,7 +24,7 @@ namespace AsyncImageLoader.Loaders {
         protected override Task<Bitmap?> LoadFromGlobalCache(string url) {
             var path = Path.Combine(_cacheFolder, CreateMD5(url));
             if (File.Exists(path)) {
-                return Task.FromResult(new Bitmap(url))!;
+                return Task.FromResult(new Bitmap(path))!;
             }
             return Task.FromResult<Bitmap?>(null);
         }

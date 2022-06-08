@@ -15,8 +15,8 @@
         <RepositoryType>git</RepositoryType>
         <PackageTags>image cross-platform avalonia avaloniaui c-sharp-library</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>2.1.0</Version>
-        <PackageReleaseNotes>- Add ImageLoader.IsLoading property</PackageReleaseNotes>
+        <Version>2.1.1</Version>
+        <PackageReleaseNotes>- Fix loading from disk cache</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
