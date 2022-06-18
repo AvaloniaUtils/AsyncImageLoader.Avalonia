@@ -15,6 +15,7 @@ namespace AsyncImageLoader.Avalonia.Demo {
                 desktop.MainWindow = new MainWindow {
                     DataContext = new MainWindowViewModel(),
                 };
+                desktop.MainWindow.AttachDevTools();
             }
 
             base.OnFrameworkInitializationCompleted();

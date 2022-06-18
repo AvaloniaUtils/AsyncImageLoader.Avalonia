@@ -2,7 +2,9 @@
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 
 namespace AsyncImageLoader.Loaders {
     /// <summary>
@@ -65,7 +67,15 @@ namespace AsyncImageLoader.Loaders {
         /// <returns>Bitmap</returns>
         protected virtual Task<Bitmap?> LoadFromInternalAsync(string url) {
             try {
-                return Task.FromResult(new Bitmap(url))!;
+                var uri = url.StartsWith("/")
+                    ? new Uri(url, UriKind.Relative)
+                    : new Uri(url, UriKind.RelativeOrAbsolute);
+
+                if(uri.IsAbsoluteUri && uri.IsFile)
+                    return Task.FromResult(new Bitmap(uri.LocalPath))!;
+
+                var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
+                return Task.FromResult(new Bitmap(assets.Open(uri)))!;
             }
             catch (Exception) {
                 return Task.FromResult<Bitmap?>(null);

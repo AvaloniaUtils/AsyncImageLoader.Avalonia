@@ -6,17 +6,23 @@
     </PropertyGroup>
     <ItemGroup>
         <Folder Include="Models\" />
-        <AvaloniaResource Include="Assets\**" />
+        <AvaloniaResource Include="Assets/avalonia-logo.ico" />
         <None Remove=".gitignore" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="0.10.10" />
-        <PackageReference Include="Avalonia.Desktop" Version="0.10.10" />
+        <PackageReference Include="Avalonia" Version="0.10.15" />
+        <PackageReference Include="Avalonia.Desktop" Version="0.10.15" />
         <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="0.10.10" />
-        <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.10" />
+        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="0.10.15" />
+        <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.15" />
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\AsyncImageLoader.Avalonia\AsyncImageLoader.Avalonia.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <AvaloniaResource Include="Assets/cat4.jpg" />
+        <AvaloniaResource Include="Assets/cat5.jpg" />
+        <EmbeddedResource Include="Assets/cat6.jpg" />
+        <EmbeddedResource Include="Assets/cat7.jpg" />
     </ItemGroup>
 </Project>
