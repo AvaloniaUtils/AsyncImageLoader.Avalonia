@@ -37,6 +37,11 @@ Note: The first time you will need to import the AsyncImageLoader namespace to y
    <!-- Your root element content -->
 ```
 
+### About resources and assets
+AsyncImageLoader **support** `resm:` and `avares:` links.  
+And does **not** support relative referenced assets such as `Source="icon.png"` or `Source="/icon.png"`. Here's an [issue](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/issues/2) that describes why.  
+Assets and resources in Avalonia described [here](https://docs.avaloniaui.net/docs/getting-started/assets). 
+
 ## Loaders
 ImageLoader will use instance of [IImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/IAsyncImageLoader.cs) for serving your requests.  
 You can change the loader used by setting new one to the [ImageLoader.AsyncImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/ImageLoader.cs#L10) property. Do not forget to Dispose previous loader.  
