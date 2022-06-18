@@ -6,6 +6,7 @@ using Avalonia.Controls;
 
 namespace AsyncImageLoader {
     public static class ImageLoader {
+        public const string AsyncImageLoaderLogArea = "AsyncImageLoader";
         public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
         static ImageLoader() {
             SourceProperty.Changed

@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 
@@ -13,6 +14,7 @@ namespace AsyncImageLoader.Loaders {
     /// </summary>
     public class BaseWebImageLoader : IAsyncImageLoader {
         private readonly bool _shouldDisposeHttpClient;
+        private readonly ParametrizedLogger? _logger;
 
         /// <summary>
         /// Initializes a new instance with new <see cref="HttpClient"/> instance
@@ -27,6 +29,7 @@ namespace AsyncImageLoader.Loaders {
         public BaseWebImageLoader(HttpClient httpClient, bool disposeHttpClient) {
             HttpClient = httpClient;
             _shouldDisposeHttpClient = disposeHttpClient;
+            _logger = Logger.TryGet(LogEventLevel.Information, ImageLoader.AsyncImageLoaderLogArea);
         }
 
         protected HttpClient HttpClient { get; }
@@ -71,13 +74,18 @@ namespace AsyncImageLoader.Loaders {
                     ? new Uri(url, UriKind.Relative)
                     : new Uri(url, UriKind.RelativeOrAbsolute);
 
+                if (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps) {
+                    return Task.FromResult<Bitmap?>(null);
+                }
+
                 if(uri.IsAbsoluteUri && uri.IsFile)
                     return Task.FromResult(new Bitmap(uri.LocalPath))!;
 
                 var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
                 return Task.FromResult(new Bitmap(assets.Open(uri)))!;
             }
-            catch (Exception) {
+            catch (Exception e) {
+                _logger?.Log(this, "Failed to resolve image from request with uri: {RequestUri}\nException: {Exception}", url, e);
                 return Task.FromResult<Bitmap?>(null);
             }
         }
