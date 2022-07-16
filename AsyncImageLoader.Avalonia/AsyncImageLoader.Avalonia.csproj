@@ -15,10 +15,9 @@
         <RepositoryType>git</RepositoryType>
         <PackageTags>image cross-platform avalonia avaloniaui c-sharp-library</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>2.2.0</Version>
+        <Version>2.3.0</Version>
         <PackageReleaseNotes>
-- Add support for avares and resm #1
-- Add logging to avalonia logger
+- Make ImageSource.SourceProperty nullable
         </PackageReleaseNotes>
     </PropertyGroup>
 
