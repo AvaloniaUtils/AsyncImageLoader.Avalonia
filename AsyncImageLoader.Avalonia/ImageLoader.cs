@@ -14,23 +14,25 @@ namespace AsyncImageLoader {
                 .Subscribe(args => OnSourceChanged((Image)args.Sender, args.NewValue.Value));
         }
 
-        private static async void OnSourceChanged(Image sender, string url) {
+        private static async void OnSourceChanged(Image sender, string? url) {
             SetIsLoading(sender, true);
-            
-            var bitmap = await AsyncImageLoader.ProvideImageAsync(url);
+
+            var bitmap = url == null
+                ? null
+                : await AsyncImageLoader.ProvideImageAsync(url);
             if (GetSource(sender) != url) return;
             sender.Source = bitmap;
-            
+
             SetIsLoading(sender, false);
         }
 
-        public static readonly AttachedProperty<string> SourceProperty = AvaloniaProperty.RegisterAttached<Image, string>("Source", typeof(ImageLoader));
+        public static readonly AttachedProperty<string?> SourceProperty = AvaloniaProperty.RegisterAttached<Image, string?>("Source", typeof(ImageLoader));
 
-        public static string GetSource(Image element) {
+        public static string? GetSource(Image element) {
             return element.GetValue(SourceProperty);
         }
 
-        public static void SetSource(Image element, string value) {
+        public static void SetSource(Image element, string? value) {
             element.SetValue(SourceProperty, value);
         }
 
