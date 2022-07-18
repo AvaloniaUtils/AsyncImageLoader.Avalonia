@@ -4,12 +4,17 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+        xmlns:controlSamples="clr-namespace:ControlSamples"
+        xmlns:pages="clr-namespace:AsyncImageLoader.Avalonia.Demo.Pages"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="AsyncImageLoader.Avalonia.Demo.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
         Title="AsyncImageLoader.Avalonia.Demo">
     <Window.Styles>
         <Style Selector="Image">
+            <Setter Property="Width" Value="400"></Setter>
+        </Style>
+        <Style Selector="asyncImageLoader|AdvancedImage">
             <Setter Property="Width" Value="400"></Setter>
         </Style>
         <Style Selector="StackPanel">
@@ -19,27 +24,13 @@
     <Design.DataContext>
         <vm:MainWindowViewModel/>
     </Design.DataContext>
-    <ScrollViewer>
-        <StackPanel Orientation="Vertical">
-            <TextBlock TextAlignment="Center">Images from Internet</TextBlock>
-            <StackPanel Orientation="Horizontal">
-                <Image asyncImageLoader:ImageLoader.Source="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat0.jpg" />
-                <Image asyncImageLoader:ImageLoader.Source="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat1.jpg" />
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <Image asyncImageLoader:ImageLoader.Source="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat2.jpg" />
-                <Image asyncImageLoader:ImageLoader.Source="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat3.jpg" />
-            </StackPanel>
-            <TextBlock TextAlignment="Center">Images from Assets (AvaloniaResource)</TextBlock>
-            <StackPanel Orientation="Horizontal">
-                <Image asyncImageLoader:ImageLoader.Source="avares://AsyncImageLoader.Avalonia.Demo/Assets/cat4.jpg" />
-                <Image asyncImageLoader:ImageLoader.Source="avares://AsyncImageLoader.Avalonia.Demo/Assets/cat5.jpg" />
-            </StackPanel>
-            <TextBlock TextAlignment="Center">Images from manifest resources (EmbeddedResource)</TextBlock>
-            <StackPanel Orientation="Horizontal">
-                <Image asyncImageLoader:ImageLoader.Source="resm:AsyncImageLoader.Avalonia.Demo.Assets.cat6.jpg" />
-                <Image asyncImageLoader:ImageLoader.Source="resm:AsyncImageLoader.Avalonia.Demo.Assets.cat7.jpg" />
-            </StackPanel>
-        </StackPanel>
-    </ScrollViewer>
+    
+    <controlSamples:HamburgerMenu>
+        <TabItem Header="ImageLoader attached prop">
+            <pages:AttachedPropertiesPage/>
+        </TabItem>
+        <TabItem Header="AdvancedImage control">
+            <pages:AdvancedImagePage/>
+        </TabItem>
+    </controlSamples:HamburgerMenu>
 </Window>

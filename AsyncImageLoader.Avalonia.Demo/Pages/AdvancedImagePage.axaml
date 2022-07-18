@@ -1,0 +1,48 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+             xmlns:services="clr-namespace:AsyncImageLoader.Avalonia.Demo.Services"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="AsyncImageLoader.Avalonia.Demo.Pages.AdvancedImagePage">
+  <StackPanel>
+    <Grid ColumnDefinitions="* 8 Auto">
+      <StackPanel Grid.Column="0" HorizontalAlignment="Left">
+        <TextBlock TextWrapping="Wrap">
+This control allows to specify a custom IAsyncImageLoader for particular control.
+Also this control has loading indicator support.
+
+I created and used loader, which will be delay image loading by one second.
+        </TextBlock>
+        <Button HorizontalAlignment="Center"
+                Click="ReloadButton_OnClick">Reload</Button>
+      </StackPanel>
+      <asyncImageLoader:AdvancedImage
+        Name="ReloadableAdvancedImage" 
+        Grid.Column="2" Width="150" Height="150" 
+        Source="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat0.jpg"
+        Loader="{x:Static services:LongLoader.Instance}"/>
+    </Grid>
+
+    <Grid ColumnDefinitions="* 8 Auto Auto">
+      <TextBlock Grid.Column="0" TextWrapping="Wrap">
+This control provides access to BaseUri. 
+So you can not only upload pictures from a file or from the Internet, but also specify their relative path as in the usual Image. 
+This control fully implements the functionality of Image, and adds all the functions of the loaders.
+Current images loaded from AvaloniaResource Source="../Assets/cat4.jpg".
+      </TextBlock>
+      <asyncImageLoader:AdvancedImage Grid.Column="2" Width="150" Height="150" Source="../Assets/cat4.jpg" />
+      <Image Grid.Column="3" Source="../Assets/cat4.jpg" Width="150" Height="150"  />
+    </Grid>
+    
+    <Grid ColumnDefinitions="* 8 Auto Auto">
+      <TextBlock Grid.Column="0" TextWrapping="Wrap">
+Also, you can use specify absolute path to AvaloniaResource.
+Current images loaded from AvaloniaResource Source="/Assets/cat5.jpg".
+      </TextBlock>
+      <asyncImageLoader:AdvancedImage Grid.Column="2" Width="150" Height="150" Source="/Assets/cat5.jpg" />
+      <Image Grid.Column="3" Source="/Assets/cat5.jpg" Width="150" Height="150"  />
+    </Grid>
+  </StackPanel>
+</UserControl>
