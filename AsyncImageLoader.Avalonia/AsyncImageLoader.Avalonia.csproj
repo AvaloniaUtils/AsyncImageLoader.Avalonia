@@ -8,16 +8,16 @@
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Title>AsyncImageLoader.Avalonia</Title>
         <Authors>SKProCH</Authors>
-        <Description>Provides way to asynchronous bitmap loading from web for Avalonia Image control</Description>
+        <Description>Provides way to asynchronous bitmap loading from web for Avalonia Image control and more</Description>
         <PackageProjectUrl>https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia</PackageProjectUrl>
         <PackageLicenseUrl>https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/LICENSE</PackageLicenseUrl>
         <RepositoryUrl>https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia.git</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageTags>image cross-platform avalonia avaloniaui c-sharp-library</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>2.3.0</Version>
+        <Version>2.4.0</Version>
         <PackageReleaseNotes>
-- Make ImageSource.SourceProperty nullable
+- Add AdvancedImage control
         </PackageReleaseNotes>
     </PropertyGroup>
 

@@ -18,6 +18,16 @@ dotnet add package AsyncImageLoader.Avalonia
 
 ## Using
 
+Note: The first time you will need to import the AsyncImageLoader namespace to your xaml file. Usually your IDE should [suggest it automatically](https://user-images.githubusercontent.com/29896317/140953397-00028365-5b93-4e6c-b470-094a555870c8.png). The root element in the file will be [like this](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia.Demo/Views/MainWindow.axaml#L6):
+```xaml
+<Window ...
+        xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+        ...>
+   <!-- Your root element content -->
+```
+Note: Assets and resources in Avalonia described [here](https://docs.avaloniaui.net/docs/getting-started/assets).
+
+### ImageLoader attached property
 The only thing you need to do in your xaml is to replace the `Source` property in `Image` with `ImageLoader.Source`.  
 For example, your old code:  
 ```xaml
@@ -27,20 +37,23 @@ Should turn into:
 ```xaml
 <Image asyncImageLoader:ImageLoader.Source="https://mycoolwebsite.io/image.jpg" />
 ```
-Also you can use `ImageLoader.IsLoading` readonly attached property that indicates whether the load is in progress or not.  
+Also you can use `ImageLoader.IsLoading` readonly attached property that indicates whether the load is in progress or not.
 
-Note: The first time you will need to import the AsyncImageLoader namespace to your xaml file. Usually your IDE should [suggest it automatically](https://user-images.githubusercontent.com/29896317/140953397-00028365-5b93-4e6c-b470-094a555870c8.png). The root element in the file will be [like this](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia.Demo/Views/MainWindow.axaml#L6):
+AsyncImageLoader **support** `resm:` and `avares:` links.
+And does **not** support relative referenced assets such as `Source="icon.png"` or `Source="/icon.png"`. Use [AdvancedImage control](#advancedimage-control).
+
+### AdvancedImage control
+This control provides all capabilities of ImageLoader attached property and **support** relative referenced assets such as `Source="icon.png"` or `Source="/icon.png"`.
+Before you go, add following style to you `App.xaml` file and `Application.Styles` section:
 ```xaml
-<Window ...
-        xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
-        ...>
-   <!-- Your root element content -->
+<StyleInclude Source="avares://AsyncImageLoader.Avalonia/AdvancedImage.axaml" />
 ```
-
-### About resources and assets
-AsyncImageLoader **support** `resm:` and `avares:` links.  
-And does **not** support relative referenced assets such as `Source="icon.png"` or `Source="/icon.png"`. Here's an [issue](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/issues/2) that describes why.  
-Assets and resources in Avalonia described [here](https://docs.avaloniaui.net/docs/getting-started/assets). 
+And you can use `AdvancedImage` as any other control:
+```xaml
+<asyncImageLoader:AdvancedImage Width="150" Height="150" Source="../Assets/cat4.jpg" />
+```
+This control allows to specify a custom IAsyncImageLoader for particular control.  
+Also, this control has loading indicator support out of the box.
 
 ## Loaders
 ImageLoader will use instance of [IImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/IAsyncImageLoader.cs) for serving your requests.  
