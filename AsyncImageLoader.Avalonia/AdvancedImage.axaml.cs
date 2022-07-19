@@ -61,6 +61,9 @@ namespace AsyncImageLoader {
             Image.StretchDirectionProperty.AddOwner<AdvancedImage>();
 
         static AdvancedImage() {
+            AffectsRender<AdvancedImage>(CurrentImageProperty, StretchProperty, StretchDirectionProperty);
+            AffectsMeasure<AdvancedImage>(CurrentImageProperty, StretchProperty, StretchDirectionProperty);
+
             var sourceChangedObservable = SourceProperty.Changed
                 .Where(args => args.IsEffectiveValueChange);
 
@@ -183,6 +186,52 @@ namespace AsyncImageLoader {
         public StretchDirection StretchDirection {
             get => GetValue(StretchDirectionProperty);
             set => SetValue(StretchDirectionProperty, value);
+        }
+
+        /// <summary>
+        /// Renders the control.
+        /// </summary>
+        /// <param name="context">The drawing context.</param>
+        public override void Render(DrawingContext context) {
+            var source = CurrentImage;
+
+            if (source != null && Bounds.Width > 0 && Bounds.Height > 0) {
+                Rect viewPort = new Rect(Bounds.Size);
+                Size sourceSize = source.Size;
+
+                Vector scale = Stretch.CalculateScaling(Bounds.Size, sourceSize, StretchDirection);
+                Size scaledSize = sourceSize * scale;
+                Rect destRect = viewPort
+                    .CenterRect(new Rect(scaledSize))
+                    .Intersect(viewPort);
+                Rect sourceRect = new Rect(sourceSize)
+                    .CenterRect(new Rect(destRect.Size / scale));
+
+                var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
+
+                context.DrawImage(source, sourceRect, destRect, interpolationMode);
+            }
+            else {
+                base.Render(context);
+            }
+        }
+
+        /// <summary>
+        /// Measures the control.
+        /// </summary>
+        /// <param name="availableSize">The available size.</param>
+        /// <returns>The desired size of the control.</returns>
+        protected override Size MeasureOverride(Size availableSize) {
+            return CurrentImage != null
+                ? Stretch.CalculateSize(availableSize, CurrentImage.Size, StretchDirection)
+                : base.MeasureOverride(availableSize);
+        }
+
+        /// <inheritdoc/>
+        protected override Size ArrangeOverride(Size finalSize) {
+            return CurrentImage != null
+                ? Stretch.CalculateSize(finalSize, CurrentImage.Size)
+                : base.ArrangeOverride(finalSize);
         }
     }
 }
