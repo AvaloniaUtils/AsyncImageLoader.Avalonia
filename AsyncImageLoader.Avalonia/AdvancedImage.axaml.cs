@@ -69,7 +69,7 @@ namespace AsyncImageLoader {
 
             var loaderChangedObservable = LoaderProperty.Changed
                 .Where(args => args.IsEffectiveValueChange)
-                .Where((args, i) => i == 0 || args.Sender.GetValue(ShouldLoaderChangeTriggerUpdateProperty))
+                .Where((args, i) => i == 0 || (bool)args.Sender.GetValue(ShouldLoaderChangeTriggerUpdateProperty))
                 .Select(args => args.NewValue.Value)
                 .StartWith((IAsyncImageLoader?)null);
 
