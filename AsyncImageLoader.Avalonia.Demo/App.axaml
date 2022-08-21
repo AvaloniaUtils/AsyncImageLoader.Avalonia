@@ -7,6 +7,7 @@
     </Application.DataTemplates>
 
     <Application.Styles>
+        <FluentTheme Mode="Light"/>
         <StyleInclude Source="avares://AsyncImageLoader.Avalonia/AdvancedImage.axaml" />
         <StyleInclude Source="avares://AsyncImageLoader.Avalonia.Demo/Controls/HamburgerMenu.axaml" />
     </Application.Styles>
