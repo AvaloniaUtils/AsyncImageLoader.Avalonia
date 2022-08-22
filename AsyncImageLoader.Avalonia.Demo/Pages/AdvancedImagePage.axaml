@@ -8,15 +8,17 @@
              x:Class="AsyncImageLoader.Avalonia.Demo.Pages.AdvancedImagePage">
   <Grid ColumnDefinitions="* 8 150 150" RowDefinitions="Auto Auto Auto Auto"
         HorizontalAlignment="Center">
-    <TextBlock Grid.Column="2" Grid.Row="0" HorizontalAlignment="Center">AdvancedImage</TextBlock>
-    <TextBlock Grid.Column="3" Grid.Row="0" HorizontalAlignment="Center">Image</TextBlock>
+    <TextBlock Grid.Column="2" Grid.Row="0" HorizontalAlignment="Center" Text="AdvancedImage"/>
+    <TextBlock Grid.Column="3" Grid.Row="0" HorizontalAlignment="Center" Text="Image"/>
     
     <StackPanel Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left">
       <TextBlock TextWrapping="Wrap">
-This control allows to specify a custom IAsyncImageLoader for particular control.
-Also this control has loading indicator support.
+		  <TextBlock.Text>
+			  This control allows to specify a custom IAsyncImageLoader for particular control.
+              Also this control has loading indicator support.
 
-I created and used loader, which will be delay image loading by one second.
+              I created and used loader, which will be delay image loading by one second.
+		  </TextBlock.Text>
       </TextBlock>
       <Button HorizontalAlignment="Center"
               Click="ReloadButton_OnClick">Reload</Button>
@@ -28,17 +30,21 @@ I created and used loader, which will be delay image loading by one second.
       Loader="{x:Static services:LongLoader.Instance}"/>
     
     <TextBlock Grid.Row="2" Grid.Column="0" TextWrapping="Wrap">
-This control provides access to BaseUri. 
-So you can not only upload pictures from a file or from the Internet, but also specify their relative path as in the usual Image. 
-This control fully implements the functionality of Image, and adds all the functions of the loaders.
-Current images loaded from AvaloniaResource Source="../Assets/cat4.jpg".
+        <TextBlock.Text>
+            This control provides access to BaseUri.
+            So you can not only upload pictures from a file or from the Internet, but also specify their relative path as in the usual Image.
+            This control fully implements the functionality of Image, and adds all the functions of the loaders.
+            Current images loaded from AvaloniaResource Source="../Assets/cat4.jpg".
+		</TextBlock.Text>
     </TextBlock>
     <asyncImageLoader:AdvancedImage Grid.Row="2" Grid.Column="2" Width="150" Height="150" Source="../Assets/cat4.jpg" />
     <Image Grid.Row="2" Grid.Column="3" Source="../Assets/cat4.jpg" Width="150" Height="150"  />
     
     <TextBlock Grid.Row="3" Grid.Column="0" TextWrapping="Wrap">
-Also, you can use specify absolute path to AvaloniaResource.
-Current images loaded from AvaloniaResource Source="/Assets/cat5.jpg".
+		<TextBlock.Text>
+			Also, you can use specify absolute path to AvaloniaResource.
+            Current images loaded from AvaloniaResource Source="/Assets/cat5.jpg".
+		</TextBlock.Text>
     </TextBlock>
     <asyncImageLoader:AdvancedImage Grid.Row="3" Grid.Column="2" Width="150" Height="150" Source="/Assets/cat5.jpg" />
     <Image Grid.Row="3" Grid.Column="3" Source="/Assets/cat5.jpg" Width="150" Height="150"  />
