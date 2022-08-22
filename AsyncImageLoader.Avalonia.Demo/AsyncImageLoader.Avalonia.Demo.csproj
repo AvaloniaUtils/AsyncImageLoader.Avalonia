@@ -13,8 +13,7 @@
         <PackageReference Include="Avalonia.Desktop" Version="11.0.0-preview1" />
         <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.0-preview1" />
         
-        <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.0.0-preview1" />
+        <PackageReference Include="Avalonia.Diagnostics" Version="11.0.0-preview1" />
         <PackageReference Include="Avalonia.ReactiveUI" Version="11.0.0-preview1" />
     </ItemGroup>
     <ItemGroup>
