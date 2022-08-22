@@ -5,10 +5,16 @@
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
-
+    
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://AsyncImageLoader.Avalonia.Demo/Controls/HamburgerMenu.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
     <Application.Styles>
         <FluentTheme Mode="Light"/>
         <StyleInclude Source="avares://AsyncImageLoader.Avalonia/AdvancedImage.axaml" />
-        <StyleInclude Source="avares://AsyncImageLoader.Avalonia.Demo/Controls/HamburgerMenu.axaml" />
     </Application.Styles>
 </Application>
