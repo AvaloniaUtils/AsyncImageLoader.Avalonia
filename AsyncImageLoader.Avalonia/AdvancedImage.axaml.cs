@@ -3,6 +3,7 @@ using System.Reactive.Linq;
 using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Data;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -61,21 +62,24 @@ namespace AsyncImageLoader {
             Image.StretchDirectionProperty.AddOwner<AdvancedImage>();
 
         static AdvancedImage() {
-            AffectsRender<AdvancedImage>(CurrentImageProperty, StretchProperty, StretchDirectionProperty);
+            AffectsRender<AdvancedImage>(CurrentImageProperty, StretchProperty, StretchDirectionProperty, CornerRadiusProperty);
             AffectsMeasure<AdvancedImage>(CurrentImageProperty, StretchProperty, StretchDirectionProperty);
+        }
 
-            var sourceChangedObservable = SourceProperty.Changed
-                .Where(args => args.IsEffectiveValueChange);
-
-            var loaderChangedObservable = LoaderProperty.Changed
-                .Where(args => args.IsEffectiveValueChange)
-                .Where((args, i) => i == 0 || (bool)args.Sender.GetValue(ShouldLoaderChangeTriggerUpdateProperty)!)
-                .Select(args => args.NewValue.Value)
-                .StartWith((IAsyncImageLoader?)null);
-
-            sourceChangedObservable.CombineLatest(loaderChangedObservable)
-                .Select(tuple => (Control: (AdvancedImage)tuple.First.Sender, Source: tuple.First.NewValue.Value, Loader: tuple.Second))
-                .Subscribe(tuple => tuple.Control.UpdateImage(tuple.Source, tuple.Loader));
+        protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
+            if (change.Property == SourceProperty && change.IsEffectiveValueChange) {
+                UpdateImage(change.GetNewValue<string>(), Loader);
+            }
+            else if (change.Property == LoaderProperty && change.IsEffectiveValueChange && ShouldLoaderChangeTriggerUpdate) {
+                UpdateImage(change.GetNewValue<string>(), Loader);
+            }
+            else if (change.Property == CornerRadiusProperty && change.IsEffectiveValueChange) {
+                UpdateCornerRadius(change.GetNewValue<CornerRadius>());
+            }
+            else if (change.Property == BoundsProperty && change.IsEffectiveValueChange && !CornerRadius.IsEmpty) {
+                UpdateCornerRadius(CornerRadius);
+            }
+            base.OnPropertyChanged(change);
         }
 
         private CancellationTokenSource? _updateCancellationToken;
@@ -108,6 +112,13 @@ namespace AsyncImageLoader {
             if (cancellationTokenSource.IsCancellationRequested) return;
             CurrentImage = bitmap;
             IsLoading = false;
+        }
+
+        private RoundedRect _cornerRadiusClip;
+        private bool _isCornerRadiusUsed;
+        private void UpdateCornerRadius(CornerRadius radius) {
+            _isCornerRadiusUsed = !radius.IsEmpty;
+            _cornerRadiusClip = new RoundedRect(new Rect(0, 0, Bounds.Width, Bounds.Height), radius);
         }
 
         private Uri? _baseUri;
@@ -209,7 +220,9 @@ namespace AsyncImageLoader {
 
                 var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
 
+                DrawingContext.PushedState? pushedState = _isCornerRadiusUsed ? context.PushClip(_cornerRadiusClip) : null;
                 context.DrawImage(source, sourceRect, destRect, interpolationMode);
+                pushedState?.Dispose();
             }
             else {
                 base.Render(context);
