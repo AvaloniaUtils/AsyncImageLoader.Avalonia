@@ -67,16 +67,16 @@ namespace AsyncImageLoader {
         }
 
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
-            if (change.Property == SourceProperty && change.IsEffectiveValueChange) {
+            if (change.Property == SourceProperty) {
                 UpdateImage(change.GetNewValue<string>(), Loader);
             }
-            else if (change.Property == LoaderProperty && change.IsEffectiveValueChange && ShouldLoaderChangeTriggerUpdate) {
+            else if (change.Property == LoaderProperty && ShouldLoaderChangeTriggerUpdate) {
                 UpdateImage(change.GetNewValue<string>(), Loader);
             }
-            else if (change.Property == CornerRadiusProperty && change.IsEffectiveValueChange) {
+            else if (change.Property == CornerRadiusProperty) {
                 UpdateCornerRadius(change.GetNewValue<CornerRadius>());
             }
-            else if (change.Property == BoundsProperty && change.IsEffectiveValueChange && !CornerRadius.IsEmpty) {
+            else if (change.Property == BoundsProperty && !CornerRadius.IsEmpty) {
                 UpdateCornerRadius(CornerRadius);
             }
             base.OnPropertyChanged(change);

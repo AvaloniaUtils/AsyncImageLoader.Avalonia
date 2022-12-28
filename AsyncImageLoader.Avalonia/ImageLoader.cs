@@ -10,7 +10,6 @@ namespace AsyncImageLoader {
         public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
         static ImageLoader() {
             SourceProperty.Changed
-                .Where(args => args.IsEffectiveValueChange)
                 .Subscribe(args => OnSourceChanged((Image)args.Sender, args.NewValue.Value));
         }
 
