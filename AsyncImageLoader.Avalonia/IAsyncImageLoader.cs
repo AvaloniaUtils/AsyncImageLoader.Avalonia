@@ -2,10 +2,12 @@
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 
-namespace AsyncImageLoader {
-    public interface IAsyncImageLoader : IDisposable {
+namespace AsyncImageLoader
+{
+    public interface IAsyncImageLoader : IDisposable
+    {
         /// <summary>
-        /// Loads image
+        ///     Loads image
         /// </summary>
         /// <param name="url">Target url</param>
         /// <returns>Bitmap</returns>
