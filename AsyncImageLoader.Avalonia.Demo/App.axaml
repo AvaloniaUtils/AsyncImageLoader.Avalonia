@@ -14,7 +14,7 @@
         </ResourceDictionary>
     </Application.Resources>
     <Application.Styles>
-        <FluentTheme Mode="Light"/>
+        <FluentTheme />
         <StyleInclude Source="avares://AsyncImageLoader.Avalonia/AdvancedImage.axaml" />
     </Application.Styles>
 </Application>
