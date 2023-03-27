@@ -170,7 +170,7 @@ namespace AsyncImageLoader
                 UpdateImage(change.GetNewValue<string>(), Loader);
             else if (change.Property == CornerRadiusProperty)
                 UpdateCornerRadius(change.GetNewValue<CornerRadius>());
-            else if (change.Property == BoundsProperty && !CornerRadius.IsDefault) UpdateCornerRadius(CornerRadius);
+            else if (change.Property == BoundsProperty && CornerRadius != default) UpdateCornerRadius(CornerRadius);
             base.OnPropertyChanged(change);
         }
 
@@ -209,7 +209,7 @@ namespace AsyncImageLoader
 
         private void UpdateCornerRadius(CornerRadius radius)
         {
-            _isCornerRadiusUsed = !radius.IsDefault;
+            _isCornerRadiusUsed = radius != default;
             _cornerRadiusClip = new RoundedRect(new Rect(0, 0, Bounds.Width, Bounds.Height), radius);
         }
 

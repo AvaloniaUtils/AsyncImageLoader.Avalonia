@@ -15,10 +15,10 @@
         <RepositoryType>git</RepositoryType>
         <PackageTags>image cross-platform avalonia avaloniaui c-sharp-library</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>3.0.0-avalonia11-preview3</Version>
+        <Version>3.0.0-avalonia11-preview4</Version>
         <PackageReleaseNotes>
 - Implement CornerRadius for AdvancedImage 
-- Avalonia 11.0.0-preview5 support
+- Avalonia 11.0.0-preview6 support
         </PackageReleaseNotes>
     </PropertyGroup>
 
@@ -27,7 +27,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Avalonia" Version="11.0.0-preview5" />
+      <PackageReference Include="Avalonia" Version="11.0.0-preview6" />
     </ItemGroup>
 
 </Project>
