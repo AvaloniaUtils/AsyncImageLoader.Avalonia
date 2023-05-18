@@ -44,8 +44,8 @@ namespace AsyncImageLoader
         /// <summary>
         ///     Defines the <see cref="CurrentImage" /> property.
         /// </summary>
-        public static readonly DirectProperty<AdvancedImage, IImage?> CurrentImageProperty =
-            AvaloniaProperty.RegisterDirect<AdvancedImage, IImage?>(
+        public static readonly DirectProperty<AdvancedImage, Bitmap?> CurrentImageProperty =
+            AvaloniaProperty.RegisterDirect<AdvancedImage, Bitmap?>(
                 nameof(CurrentImage),
                 image => image._currentImage);
 
@@ -65,7 +65,7 @@ namespace AsyncImageLoader
 
         private RoundedRect _cornerRadiusClip;
 
-        private IImage? _currentImage;
+        private Bitmap? _currentImage;
         private bool _isCornerRadiusUsed;
 
         private bool _isLoading;
@@ -138,7 +138,7 @@ namespace AsyncImageLoader
         /// <summary>
         ///     Gets a currently loaded IImage.
         /// </summary>
-        public IImage? CurrentImage
+        public Bitmap? CurrentImage
         {
             get => _currentImage;
             private set => SetAndRaise(CurrentImageProperty, ref _currentImage, value);
@@ -170,7 +170,7 @@ namespace AsyncImageLoader
                 UpdateImage(change.GetNewValue<string>(), Loader);
             else if (change.Property == CornerRadiusProperty)
                 UpdateCornerRadius(change.GetNewValue<CornerRadius>());
-            else if (change.Property == BoundsProperty && !CornerRadius.IsDefault) UpdateCornerRadius(CornerRadius);
+            else if (change.Property == BoundsProperty && !(CornerRadius == default)) UpdateCornerRadius(CornerRadius);
             base.OnPropertyChanged(change);
         }
 
@@ -182,7 +182,7 @@ namespace AsyncImageLoader
             IsLoading = true;
             CurrentImage = null;
 
-            IBitmap? bitmap = null;
+            Bitmap? bitmap = null;
             if (source != null)
             {
                 // Hack to support relative URI
@@ -209,7 +209,7 @@ namespace AsyncImageLoader
 
         private void UpdateCornerRadius(CornerRadius radius)
         {
-            _isCornerRadiusUsed = !radius.IsDefault;
+            _isCornerRadiusUsed = !(radius == default);
             _cornerRadiusClip = new RoundedRect(new Rect(0, 0, Bounds.Width, Bounds.Height), radius);
         }
 
@@ -234,11 +234,9 @@ namespace AsyncImageLoader
                 var sourceRect = new Rect(sourceSize)
                     .CenterRect(new Rect(destRect.Size / scale));
 
-                var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
-
                 DrawingContext.PushedState? pushedState =
                     _isCornerRadiusUsed ? context.PushClip(_cornerRadiusClip) : null;
-                context.DrawImage(source, sourceRect, destRect, interpolationMode);
+                context.DrawImage(source, sourceRect, destRect);
                 pushedState?.Dispose();
             }
             else

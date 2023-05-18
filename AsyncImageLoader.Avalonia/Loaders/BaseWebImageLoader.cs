@@ -44,7 +44,7 @@ namespace AsyncImageLoader.Loaders
         protected HttpClient HttpClient { get; }
 
         /// <inheritdoc />
-        public virtual Task<IBitmap?> ProvideImageAsync(string url)
+        public virtual Task<Bitmap?> ProvideImageAsync(string url)
         {
             return LoadAsync(url);
         }
@@ -60,7 +60,7 @@ namespace AsyncImageLoader.Loaders
         /// </summary>
         /// <param name="url">Target url</param>
         /// <returns>Bitmap</returns>
-        protected virtual async Task<IBitmap?> LoadAsync(string url)
+        protected virtual async Task<Bitmap?> LoadAsync(string url)
         {
             var internalOrCachedBitmap = await LoadFromInternalAsync(url) ?? await LoadFromGlobalCache(url);
             if (internalOrCachedBitmap != null) return internalOrCachedBitmap;
