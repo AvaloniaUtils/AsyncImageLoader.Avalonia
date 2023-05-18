@@ -4,7 +4,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
-        xmlns:controlSamples="clr-namespace:ControlSamples"
         xmlns:pages="clr-namespace:AsyncImageLoader.Avalonia.Demo.Pages"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="AsyncImageLoader.Avalonia.Demo.Views.MainWindow"
@@ -12,25 +11,27 @@
         Title="AsyncImageLoader.Avalonia.Demo">
     <Window.Styles>
         <Style Selector="Image">
-            <Setter Property="Width" Value="400"></Setter>
+            <Setter Property="Width" Value="400"/>
         </Style>
         <Style Selector="asyncImageLoader|AdvancedImage">
-            <Setter Property="Width" Value="400"></Setter>
+            <Setter Property="Width" Value="400"/>
         </Style>
         <Style Selector="StackPanel">
-            <Setter Property="HorizontalAlignment" Value="Center"></Setter>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
         </Style>
     </Window.Styles>
     <Design.DataContext>
         <vm:MainWindowViewModel/>
     </Design.DataContext>
-    
-    <controlSamples:HamburgerMenu>
-        <TabItem Header="ImageLoader attached prop">
-            <pages:AttachedPropertiesPage/>
-        </TabItem>
-        <TabItem Header="AdvancedImage control">
-            <pages:AdvancedImagePage/>
-        </TabItem>
-    </controlSamples:HamburgerMenu>
+
+	<ScrollViewer>
+		<TabControl>
+            <TabItem Header="ImageLoader attached prop">
+                <pages:AttachedPropertiesPage/>
+            </TabItem>
+            <TabItem Header="AdvancedImage control">
+                <pages:AdvancedImagePage/>
+            </TabItem>
+        </TabControl>
+    </ScrollViewer>
 </Window>

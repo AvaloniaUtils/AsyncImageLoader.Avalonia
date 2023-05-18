@@ -9,13 +9,12 @@
         <None Remove=".gitignore" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="11.0.0-preview1" />
-        <PackageReference Include="Avalonia.Desktop" Version="11.0.0-preview1" />
-        <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.0-preview1" />
+        <PackageReference Include="Avalonia" Version="11.0.999-cibuild0035015-beta" />
+        <PackageReference Include="Avalonia.Desktop" Version="11.0.999-cibuild0035015-beta" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.999-cibuild0035015-beta" />
         
-        <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.0.0-preview1" />
-        <PackageReference Include="Avalonia.ReactiveUI" Version="11.0.0-preview1" />
+        <PackageReference Include="Avalonia.Diagnostics" Version="11.0.999-cibuild0035015-beta" />
+        <PackageReference Include="Avalonia.ReactiveUI" Version="11.0.999-cibuild0035015-beta" />
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\AsyncImageLoader.Avalonia\AsyncImageLoader.Avalonia.csproj" />

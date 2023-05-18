@@ -5,10 +5,8 @@
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
-
     <Application.Styles>
-        <FluentTheme Mode="Light"/>
+        <FluentTheme />
         <StyleInclude Source="avares://AsyncImageLoader.Avalonia/AdvancedImage.axaml" />
-        <StyleInclude Source="avares://AsyncImageLoader.Avalonia.Demo/Controls/HamburgerMenu.axaml" />
     </Application.Styles>
 </Application>
