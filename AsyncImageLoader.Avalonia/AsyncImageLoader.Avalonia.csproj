@@ -15,9 +15,9 @@
         <RepositoryType>git</RepositoryType>
         <PackageTags>image cross-platform avalonia avaloniaui c-sharp-library</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>2.4.0</Version>
+        <Version>2.5.0</Version>
         <PackageReleaseNotes>
-- Add AdvancedImage control
+- Add ImageBrushLoader
         </PackageReleaseNotes>
     </PropertyGroup>
 

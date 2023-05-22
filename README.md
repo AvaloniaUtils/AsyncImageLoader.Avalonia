@@ -52,8 +52,19 @@ And you can use `AdvancedImage` as any other control:
 ```xaml
 <asyncImageLoader:AdvancedImage Width="150" Height="150" Source="../Assets/cat4.jpg" />
 ```
-This control allows to specify a custom IAsyncImageLoader for particular control.  
+This control allows specifying a custom IAsyncImageLoader for particular control.  
 Also, this control has loading indicator support out of the box.
+
+### ImageBrush
+If you need a brush you can use Avalonia's `ImageBrush` with `ImageBrushLoader.Source` property (instead of default `Source`). It will look like that:
+```xaml
+<Border>
+  <Border.Background>
+    <ImageBrush
+      asyncImageLoader:ImageBrushLoader.Source="https://mycoolwebsite.io/image.jpg" />
+  </Border.Background>
+</Border>
+```
 
 ## Loaders
 ImageLoader will use instance of [IImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/IAsyncImageLoader.cs) for serving your requests.  
