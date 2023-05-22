@@ -182,7 +182,7 @@ namespace AsyncImageLoader
             IsLoading = true;
             CurrentImage = null;
 
-            IBitmap? bitmap = null;
+            Bitmap? bitmap = null;
             if (source != null)
             {
                 // Hack to support relative URI
