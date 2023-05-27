@@ -11,6 +11,6 @@ namespace AsyncImageLoader
         /// </summary>
         /// <param name="url">Target url</param>
         /// <returns>Bitmap</returns>
-        public Task<IBitmap?> ProvideImageAsync(string url);
+        public Task<Bitmap?> ProvideImageAsync(string url);
     }
 }
