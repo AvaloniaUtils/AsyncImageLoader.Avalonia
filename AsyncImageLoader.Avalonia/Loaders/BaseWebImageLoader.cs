@@ -62,7 +62,8 @@ namespace AsyncImageLoader.Loaders
         /// <returns>Bitmap</returns>
         protected virtual async Task<Bitmap?> LoadAsync(string url)
         {
-            var internalOrCachedBitmap = await LoadFromInternalAsync(url) ?? await LoadFromGlobalCache(url);
+            var internalOrCachedBitmap = await LoadFromLocalAsync(url) ??
+                                         await LoadFromInternalAsync(url) ?? await LoadFromGlobalCache(url);
             if (internalOrCachedBitmap != null) return internalOrCachedBitmap;
 
             try
@@ -79,6 +80,16 @@ namespace AsyncImageLoader.Loaders
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// the url maybe is local file url,so if file exists ,we got a Bitmap
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        private Task<Bitmap?> LoadFromLocalAsync(string url)
+        {
+            return Task.FromResult(File.Exists(url) ? new Bitmap(url) : null);
         }
 
         /// <summary>
