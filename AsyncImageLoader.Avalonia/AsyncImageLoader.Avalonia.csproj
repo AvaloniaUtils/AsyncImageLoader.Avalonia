@@ -27,7 +27,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Avalonia" Version="11.0.999-cibuild0035215-beta" />
+      <PackageReference Include="Avalonia" Version="11.0.999-cibuild0036033-beta" />
     </ItemGroup>
 
 </Project>

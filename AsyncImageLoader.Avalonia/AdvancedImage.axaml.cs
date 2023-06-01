@@ -187,11 +187,10 @@ namespace AsyncImageLoader
             {
                 // Hack to support relative URI
                 // TODO: Refactor IAsyncImageLoader to support BaseUri 
-                var assetLoader = AvaloniaLocator.Current.GetService<IAssetLoader>();
                 try
                 {
                     var uri = new Uri(source, UriKind.RelativeOrAbsolute);
-                    if (assetLoader?.Exists(uri, _baseUri) ?? false) bitmap = new Bitmap(assetLoader.Open(uri, _baseUri));
+                    if (AssetLoader.Exists(uri, _baseUri)) bitmap = new Bitmap(AssetLoader.Open(uri, _baseUri));
                 }
                 catch (Exception)
                 {
