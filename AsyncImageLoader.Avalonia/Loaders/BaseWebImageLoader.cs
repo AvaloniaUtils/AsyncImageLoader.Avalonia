@@ -113,8 +113,7 @@ namespace AsyncImageLoader.Loaders
                 if (uri is { IsAbsoluteUri: true, IsFile: true })
                     return Task.FromResult(new Bitmap(uri.LocalPath))!;
 
-                var assets = AvaloniaLocator.Current.GetService<IAssetLoader>();
-                return Task.FromResult(new Bitmap(assets?.Open(uri) ?? Stream.Null))!;
+                return Task.FromResult(new Bitmap(AssetLoader.Open(uri)))!;
             }
             catch (Exception e)
             {

@@ -187,11 +187,10 @@ namespace AsyncImageLoader
             {
                 // Hack to support relative URI
                 // TODO: Refactor IAsyncImageLoader to support BaseUri 
-                var assetLoader = AvaloniaLocator.Current.GetService<IAssetLoader>();
                 try
                 {
                     var uri = new Uri(source, UriKind.RelativeOrAbsolute);
-                    if (assetLoader?.Exists(uri, _baseUri) ?? false) bitmap = new Bitmap(assetLoader.Open(uri, _baseUri));
+                    if (AssetLoader.Exists(uri, _baseUri)) bitmap = new Bitmap(AssetLoader.Open(uri, _baseUri));
                 }
                 catch (Exception)
                 {
@@ -234,11 +233,9 @@ namespace AsyncImageLoader
                 var sourceRect = new Rect(sourceSize)
                     .CenterRect(new Rect(destRect.Size / scale));
 
-                var interpolationMode = RenderOptions.GetBitmapInterpolationMode(this);
-
                 DrawingContext.PushedState? pushedState =
                     _isCornerRadiusUsed ? context.PushClip(_cornerRadiusClip) : null;
-                context.DrawImage(source, sourceRect, destRect, interpolationMode);
+                context.DrawImage(source, sourceRect, destRect);
                 pushedState?.Dispose();
             }
             else

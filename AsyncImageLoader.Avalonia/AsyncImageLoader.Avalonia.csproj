@@ -15,10 +15,9 @@
         <RepositoryType>git</RepositoryType>
         <PackageTags>image cross-platform avalonia avaloniaui c-sharp-library</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>3.0.0-avalonia11-preview5</Version>
+        <Version>3.0.0-avalonia11-preview6</Version>
         <PackageReleaseNotes>
-- Replace IBitmap with Bitmap due to IBitmap will be internal in next Avalonia release. Thanks, @afunc233
-- Fix loading from local disk in some linux distros. Thanks, @afunc233
+- Support for Avalonia 11.0.0-rc1.1
         </PackageReleaseNotes>
     </PropertyGroup>
 
@@ -27,7 +26,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Avalonia" Version="11.0.0-preview6" />
+      <PackageReference Include="Avalonia" Version="11.0.0-rc1.1" />
     </ItemGroup>
 
 </Project>
