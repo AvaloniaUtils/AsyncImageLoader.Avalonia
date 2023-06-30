@@ -15,9 +15,9 @@
         <RepositoryType>git</RepositoryType>
         <PackageTags>image cross-platform avalonia avaloniaui c-sharp-library</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>2.5.0</Version>
+        <Version>2.4.0</Version>
         <PackageReleaseNotes>
-- Add ImageBrushLoader
+- Add AdvancedImage control
         </PackageReleaseNotes>
     </PropertyGroup>
 
@@ -26,7 +26,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Avalonia" Version="0.10.0" />
+      <PackageReference Include="Avalonia" Version="11.0.0-rc1.1" />
+      <PackageReference Include="Avalonia.ReactiveUI" Version="11.0.0-rc1.1" />
     </ItemGroup>
 
 </Project>

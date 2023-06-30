@@ -56,16 +56,20 @@
                               HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
                               VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}">
                   <ItemsPresenter Name="PART_ItemsPresenter"
-                                  HorizontalAlignment="Stretch"
-                                  ItemTemplate="{TemplateBinding ItemTemplate}"
-                                  Items="{TemplateBinding Items}">
+                                  HorizontalAlignment="Stretch">
                     <ItemsPresenter.ItemsPanel>
                       <ItemsPanelTemplate>
                         <StackPanel x:Name="HamburgerItemsPanel"
                                     Margin="0,2" Orientation="Vertical" />
                       </ItemsPanelTemplate>
                     </ItemsPresenter.ItemsPanel>
+                    <ItemsPresenter.Classes>
+                      {x:Type TabItem}
+                       
+                    </ItemsPresenter.Classes>
                   </ItemsPresenter>
+                  
+                                  
                 </ScrollViewer>
                 <Button x:Name="SettingsButton"
                         Grid.Row="2"

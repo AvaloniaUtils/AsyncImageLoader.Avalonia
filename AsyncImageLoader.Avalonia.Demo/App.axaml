@@ -1,13 +1,14 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="using:AsyncImageLoader.Avalonia.Demo"
-             x:Class="AsyncImageLoader.Avalonia.Demo.App">
+             x:Class="AsyncImageLoader.Avalonia.Demo.App"
+             RequestedThemeVariant="Light">
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
 
     <Application.Styles>
-        <FluentTheme Mode="Light"/>
+        <FluentTheme />
         <StyleInclude Source="avares://AsyncImageLoader.Avalonia/AdvancedImage.axaml" />
         <StyleInclude Source="avares://AsyncImageLoader.Avalonia.Demo/Controls/HamburgerMenu.axaml" />
     </Application.Styles>

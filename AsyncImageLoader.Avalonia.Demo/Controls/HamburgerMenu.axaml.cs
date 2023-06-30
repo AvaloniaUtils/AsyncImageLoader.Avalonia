@@ -7,6 +7,7 @@ namespace ControlSamples
 {
     public class HamburgerMenu : TabControl
     {
+
         private SplitView? _splitView;
 
         public static readonly StyledProperty<IBrush?> PaneBackgroundProperty =
@@ -43,14 +44,33 @@ namespace ControlSamples
             _splitView = e.NameScope.Find<SplitView>("PART_NavigationPane");
         }
 
-        protected override void OnPropertyChanged<T>(AvaloniaPropertyChangedEventArgs<T> change) {
-            base.OnPropertyChanged(change);
+    #region Overrides of TabControl
 
+
+        /// <inheritdoc />
+        protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
             if (change.Property == BoundsProperty && _splitView is not null)
             {
-                EnsureSplitViewMode(change.OldValue.GetValueOrDefault<Rect>(), change.NewValue.GetValueOrDefault<Rect>());
+                if (change.NewValue is Rect newRect && change.OldValue is Rect oldRect)
+                {
+                    EnsureSplitViewMode(oldRect, newRect);
+                }
             }
         }
+
+
+    #endregion
+
+        // public override void OnPropertyChanged<T>(AvaloniaPropertyChangedEventArgs<T> change) {
+        //     base.OnPropertyChanged(change);
+        //
+        //     if (change.Property == BoundsProperty && _splitView is not null)
+        //     {
+        //         EnsureSplitViewMode(change.OldValue.GetValueOrDefault<Rect>(), change.NewValue.GetValueOrDefault<Rect>());
+        //     }
+        // }
 
         private void EnsureSplitViewMode(Rect oldBounds, Rect newBounds)
         {
@@ -61,14 +81,15 @@ namespace ControlSamples
                 if (newBounds.Width >= threshold && oldBounds.Width < threshold)
                 {
                     _splitView.DisplayMode = SplitViewDisplayMode.Inline;
-                    _splitView.IsPaneOpen = true;
+                    _splitView.IsPaneOpen  = true;
                 }
                 else if (newBounds.Width < threshold && oldBounds.Width >= threshold)
                 {
                     _splitView.DisplayMode = SplitViewDisplayMode.Overlay;
-                    _splitView.IsPaneOpen = false;
+                    _splitView.IsPaneOpen  = false;
                 }
             }
         }
+
     }
 }

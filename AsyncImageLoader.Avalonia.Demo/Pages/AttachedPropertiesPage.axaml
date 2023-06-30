@@ -6,41 +6,15 @@
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="AsyncImageLoader.Avalonia.Demo.Pages.AttachedPropertiesPage">
   <StackPanel Orientation="Vertical">
-    <StackPanel.Styles>
-      <Style Selector="Image">
-        <Setter Property="Width" Value="400" />
-        <Setter Property="Height" Value="300" />
-      </Style>
-      <Style Selector="Border">
-        <Setter Property="Width" Value="400" />
-        <Setter Property="Height" Value="300" />
-      </Style>
-    </StackPanel.Styles>
-
     <TextBlock TextAlignment="Center">Images from Internet</TextBlock>
     <StackPanel Orientation="Horizontal">
-      <Image
-        asyncImageLoader:ImageLoader.Source="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat0.jpg" />
-      <Image
-        asyncImageLoader:ImageLoader.Source="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat1.jpg" />
+      <Image asyncImageLoader:ImageLoader.Source="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat0.jpg" />
+      <Image asyncImageLoader:ImageLoader.Source="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat1.jpg" />
     </StackPanel>
-
-    <TextBlock TextAlignment="Center">Images from Internet via ImageBrush</TextBlock>
     <StackPanel Orientation="Horizontal">
-      <Border>
-        <Border.Background>
-          <ImageBrush
-            asyncImageLoader:ImageBrushLoader.Source="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat2.jpg" />
-        </Border.Background>
-      </Border>
-      <Border>
-        <Border.Background>
-          <ImageBrush
-            asyncImageLoader:ImageBrushLoader.Source="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat3.jpg" />
-        </Border.Background>
-      </Border>
+      <Image asyncImageLoader:ImageLoader.Source="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat2.jpg" />
+      <Image asyncImageLoader:ImageLoader.Source="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat3.jpg" />
     </StackPanel>
-
     <TextBlock TextAlignment="Center">Images from Assets (AvaloniaResource)</TextBlock>
     <StackPanel Orientation="Horizontal">
       <Image asyncImageLoader:ImageLoader.Source="avares://AsyncImageLoader.Avalonia.Demo/Assets/cat4.jpg" />
