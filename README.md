@@ -1,3 +1,5 @@
+[ Updated for use with Avalonia 11.0.0-rc1.1 ]
+
 # AsyncImageLoader.Avalonia
 
 Provides way to asynchronous bitmap loading for Avalonia Image control.  
