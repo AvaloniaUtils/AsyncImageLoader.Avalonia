@@ -15,9 +15,12 @@
         <RepositoryType>git</RepositoryType>
         <PackageTags>image cross-platform avalonia avaloniaui c-sharp-library</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>3.0.0-avalonia11-preview6</Version>
+        <Version>3.0.0</Version>
         <PackageReleaseNotes>
-- Support for Avalonia 11.0.0-rc1.1
+- Support for Avalonia 11
+- Replace IBitmap with Bitmap due to IBitmap will be internal in next Avalonia release. Thanks, @afunc233
+- Fix loading from local disk in some linux distros. Thanks, @afunc233
+- Implement CornerRadius for AdvancedImage
         </PackageReleaseNotes>
     </PropertyGroup>
 
@@ -26,7 +29,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Avalonia" Version="11.0.0-rc1.1" />
+      <PackageReference Include="Avalonia" Version="11.0.0" />
     </ItemGroup>
 
 </Project>
