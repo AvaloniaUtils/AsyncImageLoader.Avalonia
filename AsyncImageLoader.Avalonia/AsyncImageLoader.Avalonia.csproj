@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <LangVersion>9</LangVersion>
+        <LangVersion>10</LangVersion>
         <Nullable>enable</Nullable>
         <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
         <RootNamespace>AsyncImageLoader</RootNamespace>
@@ -15,9 +15,9 @@
         <RepositoryType>git</RepositoryType>
         <PackageTags>image cross-platform avalonia avaloniaui c-sharp-library</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>2.5.0</Version>
+        <Version>3.0.0-avalonia11-preview6</Version>
         <PackageReleaseNotes>
-- Add ImageBrushLoader
+- Support for Avalonia 11.0.0-rc1.1
         </PackageReleaseNotes>
     </PropertyGroup>
 
@@ -26,7 +26,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Avalonia" Version="0.10.0" />
+      <PackageReference Include="Avalonia" Version="11.0.0-rc1.1" />
     </ItemGroup>
 
 </Project>

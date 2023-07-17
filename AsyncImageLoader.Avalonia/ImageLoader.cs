@@ -1,49 +1,57 @@
 ﻿using System;
-using System.Reactive.Linq;
 using AsyncImageLoader.Loaders;
 using Avalonia;
 using Avalonia.Controls;
 
-namespace AsyncImageLoader {
-    public static class ImageLoader {
-        public const string AsyncImageLoaderLogArea = "AsyncImageLoader";
-        public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
-        static ImageLoader() {
-            SourceProperty.Changed
-                .Where(args => args.IsEffectiveValueChange)
-                .Subscribe(args => OnSourceChanged((Image)args.Sender, args.NewValue.Value));
-        }
+namespace AsyncImageLoader; 
 
-        private static async void OnSourceChanged(Image sender, string? url) {
-            SetIsLoading(sender, true);
+public static class ImageLoader
+{
+    public const string AsyncImageLoaderLogArea = "AsyncImageLoader";
 
-            var bitmap = url == null
-                ? null
-                : await AsyncImageLoader.ProvideImageAsync(url);
-            if (GetSource(sender) != url) return;
-            sender.Source = bitmap;
+    public static readonly AttachedProperty<string?> SourceProperty =
+        AvaloniaProperty.RegisterAttached<Image, string?>("Source", typeof(ImageLoader));
 
-            SetIsLoading(sender, false);
-        }
+    public static readonly AttachedProperty<bool> IsLoadingProperty =
+        AvaloniaProperty.RegisterAttached<Image, bool>("IsLoading", typeof(ImageLoader));
 
-        public static readonly AttachedProperty<string?> SourceProperty = AvaloniaProperty.RegisterAttached<Image, string?>("Source", typeof(ImageLoader));
+    static ImageLoader()
+    {
+        SourceProperty.Changed.AddClassHandler<Image>(OnSourceChanged);
+    }
 
-        public static string? GetSource(Image element) {
-            return element.GetValue(SourceProperty);
-        }
+    public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
 
-        public static void SetSource(Image element, string? value) {
-            element.SetValue(SourceProperty, value);
-        }
+    private static async void OnSourceChanged(Image sender, AvaloniaPropertyChangedEventArgs args) {
+        var url = args.GetNewValue<string?>();
+        SetIsLoading(sender, true);
 
-        public static readonly AttachedProperty<bool> IsLoadingProperty = AvaloniaProperty.RegisterAttached<Image, bool>("IsLoading", typeof(ImageLoader));
+        var bitmap = url == null
+            ? null
+            : await AsyncImageLoader.ProvideImageAsync(url);
+        if (GetSource(sender) != url) return;
+        sender.Source = bitmap!;
 
-        public static bool GetIsLoading(Image element) {
-            return element.GetValue(IsLoadingProperty);
-        }
+        SetIsLoading(sender, false);
+    }
 
-        private static void SetIsLoading(Image element, bool value) {
-            element.SetValue(IsLoadingProperty, value);
-        }
+    public static string? GetSource(Image element)
+    {
+        return element.GetValue(SourceProperty);
+    }
+
+    public static void SetSource(Image element, string? value)
+    {
+        element.SetValue(SourceProperty, value);
+    }
+
+    public static bool GetIsLoading(Image element)
+    {
+        return element.GetValue(IsLoadingProperty);
+    }
+
+    private static void SetIsLoading(Image element, bool value)
+    {
+        element.SetValue(IsLoadingProperty, value);
     }
 }
