@@ -3,64 +3,55 @@ using AsyncImageLoader.Loaders;
 using Avalonia;
 using Avalonia.Controls;
 
-namespace AsyncImageLoader
+namespace AsyncImageLoader; 
+
+public static class ImageLoader
 {
-    public static class ImageLoader
+    public const string AsyncImageLoaderLogArea = "AsyncImageLoader";
+
+    public static readonly AttachedProperty<string?> SourceProperty =
+        AvaloniaProperty.RegisterAttached<Image, string?>("Source", typeof(ImageLoader));
+
+    public static readonly AttachedProperty<bool> IsLoadingProperty =
+        AvaloniaProperty.RegisterAttached<Image, bool>("IsLoading", typeof(ImageLoader));
+
+    static ImageLoader()
     {
-        public const string AsyncImageLoaderLogArea = "AsyncImageLoader";
+        SourceProperty.Changed.AddClassHandler<Image>(OnSourceChanged);
+    }
 
-        public static readonly AttachedProperty<string?> SourceProperty =
-            AvaloniaProperty.RegisterAttached<Image, string?>("Source", typeof(ImageLoader));
+    public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
 
-        public static readonly AttachedProperty<bool> IsLoadingProperty =
-            AvaloniaProperty.RegisterAttached<Image, bool>("IsLoading", typeof(ImageLoader));
+    private static async void OnSourceChanged(Image sender, AvaloniaPropertyChangedEventArgs args) {
+        var url = args.GetNewValue<string?>();
+        SetIsLoading(sender, true);
 
-        static ImageLoader()
-        {
-            SourceProperty.Changed.AddClassHandler(new Action<Image,AvaloniaPropertyChangedEventArgs<string?>>(
-                (image, args) =>
-                {
-                    OnSourceChanged(image, args.NewValue.Value);
-                }));
-            /*
-            SourceProperty.Changed
-                .Subscribe(args => OnSourceChanged((Image)args.Sender, args.NewValue.Value));
-            */
-        }
+        var bitmap = url == null
+            ? null
+            : await AsyncImageLoader.ProvideImageAsync(url);
+        if (GetSource(sender) != url) return;
+        sender.Source = bitmap!;
 
-        public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
+        SetIsLoading(sender, false);
+    }
 
-        private static async void OnSourceChanged(Image sender, string? url)
-        {
-            SetIsLoading(sender, true);
+    public static string? GetSource(Image element)
+    {
+        return element.GetValue(SourceProperty);
+    }
 
-            var bitmap = url == null
-                ? null
-                : await AsyncImageLoader.ProvideImageAsync(url);
-            if (GetSource(sender) != url) return;
-            sender.Source = bitmap!;
+    public static void SetSource(Image element, string? value)
+    {
+        element.SetValue(SourceProperty, value);
+    }
 
-            SetIsLoading(sender, false);
-        }
+    public static bool GetIsLoading(Image element)
+    {
+        return element.GetValue(IsLoadingProperty);
+    }
 
-        public static string? GetSource(Image element)
-        {
-            return element.GetValue(SourceProperty);
-        }
-
-        public static void SetSource(Image element, string? value)
-        {
-            element.SetValue(SourceProperty, value);
-        }
-
-        public static bool GetIsLoading(Image element)
-        {
-            return element.GetValue(IsLoadingProperty);
-        }
-
-        private static void SetIsLoading(Image element, bool value)
-        {
-            element.SetValue(IsLoadingProperty, value);
-        }
+    private static void SetIsLoading(Image element, bool value)
+    {
+        element.SetValue(IsLoadingProperty, value);
     }
 }
