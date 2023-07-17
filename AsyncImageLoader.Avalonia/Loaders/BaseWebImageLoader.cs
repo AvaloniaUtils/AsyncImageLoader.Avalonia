@@ -2,28 +2,23 @@
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Avalonia;
 using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 
-namespace AsyncImageLoader.Loaders
-{
+namespace AsyncImageLoader.Loaders {
     /// <summary>
     ///     Provides non cached way to asynchronously load images for <see cref="ImageLoader" />
     ///     Can be used as base class if you want to create custom caching mechanism
     /// </summary>
-    public class BaseWebImageLoader : IAsyncImageLoader
-    {
+    public class BaseWebImageLoader : IAsyncImageLoader {
         private readonly ParametrizedLogger? _logger;
         private readonly bool _shouldDisposeHttpClient;
 
         /// <summary>
         ///     Initializes a new instance with new <see cref="HttpClient" /> instance
         /// </summary>
-        public BaseWebImageLoader() : this(new HttpClient(), true)
-        {
-        }
+        public BaseWebImageLoader() : this(new HttpClient(), true) { }
 
         /// <summary>
         ///     Initializes a new instance with the provided <see cref="HttpClient" />, and specifies whether that
@@ -34,8 +29,7 @@ namespace AsyncImageLoader.Loaders
         ///     true if the inner handler should be disposed of by Dispose; false if you intend to
         ///     reuse the HttpClient.
         /// </param>
-        public BaseWebImageLoader(HttpClient httpClient, bool disposeHttpClient)
-        {
+        public BaseWebImageLoader(HttpClient httpClient, bool disposeHttpClient) {
             HttpClient = httpClient;
             _shouldDisposeHttpClient = disposeHttpClient;
             _logger = Logger.TryGet(LogEventLevel.Information, ImageLoader.AsyncImageLoaderLogArea);
@@ -44,13 +38,11 @@ namespace AsyncImageLoader.Loaders
         protected HttpClient HttpClient { get; }
 
         /// <inheritdoc />
-        public virtual Task<Bitmap?> ProvideImageAsync(string url)
-        {
-            return LoadAsync(url);
+        public virtual async Task<Bitmap?> ProvideImageAsync(string url) {
+            return await LoadAsync(url).ConfigureAwait(false);
         }
 
-        public void Dispose()
-        {
+        public void Dispose() {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
@@ -60,24 +52,23 @@ namespace AsyncImageLoader.Loaders
         /// </summary>
         /// <param name="url">Target url</param>
         /// <returns>Bitmap</returns>
-        protected virtual async Task<Bitmap?> LoadAsync(string url)
-        {
-            var internalOrCachedBitmap = await LoadFromLocalAsync(url) ??
-                                         await LoadFromInternalAsync(url) ?? await LoadFromGlobalCache(url);
+        protected virtual async Task<Bitmap?> LoadAsync(string url) {
+            var internalOrCachedBitmap =
+                await LoadFromLocalAsync(url).ConfigureAwait(false)
+             ?? await LoadFromInternalAsync(url).ConfigureAwait(false)
+             ?? await LoadFromGlobalCache(url).ConfigureAwait(false);
             if (internalOrCachedBitmap != null) return internalOrCachedBitmap;
 
-            try
-            {
-                var externalBytes = await LoadDataFromExternalAsync(url);
+            try {
+                var externalBytes = await LoadDataFromExternalAsync(url).ConfigureAwait(false);
                 if (externalBytes == null) return null;
 
                 using var memoryStream = new MemoryStream(externalBytes);
                 var bitmap = new Bitmap(memoryStream);
-                await SaveToGlobalCache(url, externalBytes);
+                await SaveToGlobalCache(url, externalBytes).ConfigureAwait(false);
                 return bitmap;
             }
-            catch (Exception)
-            {
+            catch (Exception) {
                 return null;
             }
         }
@@ -87,8 +78,7 @@ namespace AsyncImageLoader.Loaders
         /// </summary>
         /// <param name="url"></param>
         /// <returns></returns>
-        private Task<Bitmap?> LoadFromLocalAsync(string url)
-        {
+        private Task<Bitmap?> LoadFromLocalAsync(string url) {
             return Task.FromResult(File.Exists(url) ? new Bitmap(url) : null);
         }
 
@@ -99,10 +89,8 @@ namespace AsyncImageLoader.Loaders
         /// </summary>
         /// <param name="url">Target url</param>
         /// <returns>Bitmap</returns>
-        protected virtual Task<Bitmap?> LoadFromInternalAsync(string url)
-        {
-            try
-            {
+        protected virtual Task<Bitmap?> LoadFromInternalAsync(string url) {
+            try {
                 var uri = url.StartsWith("/")
                     ? new Uri(url, UriKind.Relative)
                     : new Uri(url, UriKind.RelativeOrAbsolute);
@@ -115,8 +103,7 @@ namespace AsyncImageLoader.Loaders
 
                 return Task.FromResult(new Bitmap(AssetLoader.Open(uri)))!;
             }
-            catch (Exception e)
-            {
+            catch (Exception e) {
                 _logger?.Log(this,
                     "Failed to resolve image from request with uri: {RequestUri}\nException: {Exception}", url, e);
                 return Task.FromResult<Bitmap?>(null);
@@ -129,14 +116,11 @@ namespace AsyncImageLoader.Loaders
         /// </summary>
         /// <param name="url">Target url</param>
         /// <returns>Image bytes</returns>
-        protected virtual async Task<byte[]?> LoadDataFromExternalAsync(string url)
-        {
-            try
-            {
-                return await HttpClient.GetByteArrayAsync(url);
+        protected virtual async Task<byte[]?> LoadDataFromExternalAsync(string url) {
+            try {
+                return await HttpClient.GetByteArrayAsync(url).ConfigureAwait(false);
             }
-            catch (Exception)
-            {
+            catch (Exception) {
                 return null;
             }
         }
@@ -146,8 +130,7 @@ namespace AsyncImageLoader.Loaders
         /// </summary>
         /// <param name="url">Target url</param>
         /// <returns>Bitmap</returns>
-        protected virtual Task<Bitmap?> LoadFromGlobalCache(string url)
-        {
+        protected virtual Task<Bitmap?> LoadFromGlobalCache(string url) {
             // Current implementation does not provide global caching
             return Task.FromResult<Bitmap?>(null);
         }
@@ -158,19 +141,16 @@ namespace AsyncImageLoader.Loaders
         /// <param name="url">Target url</param>
         /// <param name="imageBytes">Bytes to save</param>
         /// <returns>Bitmap</returns>
-        protected virtual Task SaveToGlobalCache(string url, byte[] imageBytes)
-        {
+        protected virtual Task SaveToGlobalCache(string url, byte[] imageBytes) {
             // Current implementation does not provide global caching
             return Task.CompletedTask;
         }
 
-        ~BaseWebImageLoader()
-        {
+        ~BaseWebImageLoader() {
             Dispose(false);
         }
 
-        protected virtual void Dispose(bool disposing)
-        {
+        protected virtual void Dispose(bool disposing) {
             if (disposing && _shouldDisposeHttpClient) HttpClient.Dispose();
         }
     }

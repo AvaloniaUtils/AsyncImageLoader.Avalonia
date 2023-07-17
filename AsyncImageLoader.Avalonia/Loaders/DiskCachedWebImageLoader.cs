@@ -6,51 +6,49 @@ using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 
-namespace AsyncImageLoader.Loaders
-{
+namespace AsyncImageLoader.Loaders {
     /// <summary>
     ///     Provides memory and disk cached way to asynchronously load images for <see cref="ImageLoader" />
     ///     Can be used as base class if you want to create custom caching mechanism
     /// </summary>
-    public class DiskCachedWebImageLoader : RamCachedWebImageLoader
-    {
+    public class DiskCachedWebImageLoader : RamCachedWebImageLoader {
         private readonly string _cacheFolder;
 
-        public DiskCachedWebImageLoader(string cacheFolder = "Cache/Images/")
-        {
+        public DiskCachedWebImageLoader(string cacheFolder = "Cache/Images/") {
             _cacheFolder = cacheFolder;
         }
 
         public DiskCachedWebImageLoader(HttpClient httpClient, bool disposeHttpClient,
-            string cacheFolder = "Cache/Images/")
-            : base(httpClient, disposeHttpClient)
-        {
+                                        string cacheFolder = "Cache/Images/")
+            : base(httpClient, disposeHttpClient) {
             _cacheFolder = cacheFolder;
         }
 
         /// <inheritdoc />
-        protected override Task<Bitmap?> LoadFromGlobalCache(string url)
-        {
+        protected override Task<Bitmap?> LoadFromGlobalCache(string url) {
             var path = Path.Combine(_cacheFolder, CreateMD5(url));
 
             return File.Exists(path) ? Task.FromResult<Bitmap?>(new Bitmap(path)) : Task.FromResult<Bitmap?>(null);
         }
 
-        protected override Task SaveToGlobalCache(string url, byte[] imageBytes)
-        {
+#if NETSTANDARD2_1
+        protected override async Task SaveToGlobalCache(string url, byte[] imageBytes) {
             var path = Path.Combine(_cacheFolder, CreateMD5(url));
 
             Directory.CreateDirectory(_cacheFolder);
-#if NETSTANDARD2_1
-            return File.WriteAllBytesAsync(path, imageBytes);
+            await File.WriteAllBytesAsync(path, imageBytes).ConfigureAwait(false);
+        }
 #else
+        protected override Task SaveToGlobalCache(string url, byte[] imageBytes)
+        {
+            var path = Path.Combine(_cacheFolder, CreateMD5(url));
+            Directory.CreateDirectory(_cacheFolder);
             File.WriteAllBytes(path, imageBytes);
             return Task.CompletedTask;
-#endif
         }
+#endif
 
-        protected static string CreateMD5(string input)
-        {
+        protected static string CreateMD5(string input) {
             // Use input string to calculate MD5 hash
             using var md5 = MD5.Create();
             var inputBytes = Encoding.ASCII.GetBytes(input);
