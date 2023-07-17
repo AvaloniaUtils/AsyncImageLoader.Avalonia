@@ -1,6 +1,4 @@
-﻿using System;
-using System.Reactive.Linq;
-using AsyncImageLoader.Loaders;
+﻿using AsyncImageLoader.Loaders;
 using Avalonia;
 using Avalonia.Media;
 
@@ -8,21 +6,23 @@ namespace AsyncImageLoader {
     public static class ImageBrushLoader {
         public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
         static ImageBrushLoader() {
-            SourceProperty.Changed
-                .Where(args => args.IsEffectiveValueChange)
-                .Subscribe(args => OnSourceChanged((ImageBrush)args.Sender, args.NewValue.Value));
+            SourceProperty.Changed.AddClassHandler<ImageBrush>(OnSourceChanged);
         }
 
-        private static async void OnSourceChanged(ImageBrush sender, string? url) {
-            SetIsLoading(sender, true);
+        private static async void OnSourceChanged(ImageBrush imageBrush, AvaloniaPropertyChangedEventArgs args) {
+            var (oldValue, newValue) = args.GetOldAndNewValue<string?>();
+            if (oldValue == newValue)
+                return;
+            
+            SetIsLoading(imageBrush, true);
 
-            var bitmap = url == null
+            var bitmap = newValue == null
                 ? null
-                : await AsyncImageLoader.ProvideImageAsync(url);
-            if (GetSource(sender) != url) return;
-            sender.Source = bitmap;
+                : await AsyncImageLoader.ProvideImageAsync(newValue);
+            if (GetSource(imageBrush) != newValue) return;
+            imageBrush.Source = bitmap;
 
-            SetIsLoading(sender, false);
+            SetIsLoading(imageBrush, false);
         }
 
         public static readonly AttachedProperty<string?> SourceProperty = AvaloniaProperty.RegisterAttached<ImageBrush, string?>("Source", typeof(ImageLoader));
