@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
@@ -176,35 +177,51 @@ public class AdvancedImage : ContentControl
 
     private async void UpdateImage(string? source, IAsyncImageLoader? loader)
     {
-        _updateCancellationToken?.Cancel();
-        _updateCancellationToken?.Dispose();
-        var cancellationTokenSource = _updateCancellationToken = new CancellationTokenSource();
-        IsLoading = true;
-        CurrentImage = null;
+		_updateCancellationToken?.Cancel();
+		_updateCancellationToken?.Dispose();
+		var cancellationTokenSource = _updateCancellationToken = new CancellationTokenSource();
+		IsLoading = true;
+		CurrentImage = null;
 
-        Bitmap? bitmap = null;
-        if (source != null)
-        {
-            // Hack to support relative URI
-            // TODO: Refactor IAsyncImageLoader to support BaseUri 
-            try
-            {
-                var uri = new Uri(source, UriKind.RelativeOrAbsolute);
-                if (AssetLoader.Exists(uri, _baseUri)) bitmap = new Bitmap(AssetLoader.Open(uri, _baseUri));
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
+        
+		Bitmap? bitmap = await Task.Run(async () =>
+		{
+			try
+			{
+				if (source == null)
+					return null;
 
-            loader ??= ImageLoader.AsyncImageLoader;
-            bitmap ??= await loader.ProvideImageAsync(source);
-        }
+				// A small delay allows to cancel early if the image goes out of screen too fast (eg. scrolling)
+				// The Bitmap constructor is expensive and cannot be cancelled
+				await Task.Delay(10, cancellationTokenSource.Token);
 
-        if (cancellationTokenSource.IsCancellationRequested) return;
-        CurrentImage = bitmap;
-        IsLoading = false;
-    }
+				// Hack to support relative URI
+				// TODO: Refactor IAsyncImageLoader to support BaseUri 
+				try
+				{
+					var uri = new Uri(source, UriKind.RelativeOrAbsolute);
+					if (AssetLoader.Exists(uri, _baseUri))
+                        return new Bitmap(AssetLoader.Open(uri, _baseUri));
+				}
+				catch (Exception)
+				{
+					// ignored
+				}
+
+				loader ??= ImageLoader.AsyncImageLoader;
+				return await loader.ProvideImageAsync(source);
+			}
+			catch (TaskCanceledException)
+			{
+				return null;
+			}
+		});
+
+		if (cancellationTokenSource.IsCancellationRequested)
+            return;
+		CurrentImage = bitmap;
+		IsLoading = false;
+	}
 
     private void UpdateCornerRadius(CornerRadius radius)
     {
