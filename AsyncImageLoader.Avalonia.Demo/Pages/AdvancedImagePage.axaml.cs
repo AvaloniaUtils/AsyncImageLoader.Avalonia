@@ -1,7 +1,10 @@
-﻿using Avalonia;
+﻿using System;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 
 namespace AsyncImageLoader.Avalonia.Demo.Pages {
     public partial class AdvancedImagePage : UserControl {
@@ -9,14 +12,18 @@ namespace AsyncImageLoader.Avalonia.Demo.Pages {
             InitializeComponent();
         }
 
-        private void InitializeComponent() {
-            AvaloniaXamlLoader.Load(this);
-        }
-
         private void ReloadButton_OnClick(object? sender, RoutedEventArgs e) {
-            var advancedImage = this.FindControl<AdvancedImage>("ReloadableAdvancedImage");
-            advancedImage.Source = null;
-            advancedImage.Source = "https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat0.jpg";
+            ReloadableAdvancedImage.Source = null;
+            ReloadableAdvancedImage.Source = "https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat0.jpg";
+        }
+        
+        private void SetSourceButton_OnClick(object? sender, RoutedEventArgs e) {
+            CurrentImageExample.Source = "/Assets/cat5.jpg";
+        }
+        
+        private void SetCurrentImageButton_OnClick(object? sender, RoutedEventArgs e) {
+            using var stream = AssetLoader.Open(new Uri("avares://AsyncImageLoader.Avalonia.Demo/Assets/cat4.jpg", UriKind.RelativeOrAbsolute));
+            CurrentImageExample.CurrentImage = new Bitmap(stream);
         }
     }
 }

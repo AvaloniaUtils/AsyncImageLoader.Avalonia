@@ -142,7 +142,7 @@ public class AdvancedImage : ContentControl
     public IImage? CurrentImage
     {
         get => _currentImage;
-        private set => SetAndRaise(CurrentImageProperty, ref _currentImage, value);
+        set => SetAndRaise(CurrentImageProperty, ref _currentImage, value);
     }
 
     /// <summary>
@@ -169,16 +169,31 @@ public class AdvancedImage : ContentControl
             UpdateImage(change.GetNewValue<string>(), Loader);
         else if (change.Property == LoaderProperty && ShouldLoaderChangeTriggerUpdate)
             UpdateImage(change.GetNewValue<string>(), Loader);
+        else if (change.Property == CurrentImageProperty)
+            ClearSourceIfUserProvideImage();
         else if (change.Property == CornerRadiusProperty)
             UpdateCornerRadius(change.GetNewValue<CornerRadius>());
         else if (change.Property == BoundsProperty && CornerRadius != default) UpdateCornerRadius(CornerRadius);
         base.OnPropertyChanged(change);
     }
 
+    private void ClearSourceIfUserProvideImage() {
+        if (CurrentImage is not null and not ImageWrapper) {
+            // User provided image himself
+            Source = null;
+        }
+    }
+
     private async void UpdateImage(string? source, IAsyncImageLoader? loader)
     {
 		_updateCancellationToken?.Cancel();
 		_updateCancellationToken?.Dispose();
+        _updateCancellationToken = null;
+        if (source is null && CurrentImage is not ImageWrapper) {
+            // User provided image himself
+            return;
+        }
+        
 		var cancellationTokenSource = _updateCancellationToken = new CancellationTokenSource();
 		IsLoading = true;
 		CurrentImage = null;
@@ -219,8 +234,8 @@ public class AdvancedImage : ContentControl
 
 		if (cancellationTokenSource.IsCancellationRequested)
             return;
-		CurrentImage = bitmap;
-		IsLoading = false;
+        CurrentImage = bitmap is null ? null : new ImageWrapper(bitmap);
+        IsLoading = false;
 	}
 
     private void UpdateCornerRadius(CornerRadius radius)
@@ -279,5 +294,19 @@ public class AdvancedImage : ContentControl
         return CurrentImage != null
             ? Stretch.CalculateSize(finalSize, CurrentImage.Size)
             : base.ArrangeOverride(finalSize);
+    }
+    
+    public sealed class ImageWrapper : IImage {
+        public IImage ImageImplementation { get; }
+        internal ImageWrapper(IImage imageImplementation) {
+            ImageImplementation = imageImplementation;
+        }
+        /// <inheritdoc />
+        public void Draw(DrawingContext context, Rect sourceRect, Rect destRect) {
+            ImageImplementation.Draw(context, sourceRect, destRect);
+        }
+
+        /// <inheritdoc />
+        public Size Size => ImageImplementation.Size;
     }
 }

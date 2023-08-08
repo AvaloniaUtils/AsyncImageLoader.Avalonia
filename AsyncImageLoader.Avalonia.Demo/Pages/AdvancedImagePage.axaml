@@ -4,9 +4,10 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
              xmlns:services="clr-namespace:AsyncImageLoader.Avalonia.Demo.Services"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             xmlns:converters="clr-namespace:AsyncImageLoader.Avalonia.Demo.Converters"
+             mc:Ignorable="d" d:DesignWidth="800"
              x:Class="AsyncImageLoader.Avalonia.Demo.Pages.AdvancedImagePage">
-  <Grid ColumnDefinitions="* 8 150 150" RowDefinitions="Auto Auto Auto Auto Auto"
+  <Grid ColumnDefinitions="* 8 150 150" RowDefinitions="Auto Auto Auto Auto Auto Auto"
         HorizontalAlignment="Center">
     <TextBlock Grid.Column="2" Grid.Row="0" HorizontalAlignment="Center" Text="AdvancedImage" />
     <TextBlock Grid.Column="3" Grid.Row="0" HorizontalAlignment="Center" Text="Image" />
@@ -60,8 +61,32 @@
     <asyncImageLoader:AdvancedImage Grid.Row="4" Grid.Column="2"
                                     Width="150" Height="150" CornerRadius="5 10 15 20"
                                     Source="/Assets/cat5.jpg" />
-    <Border Grid.Row="4" Grid.Column="3" CornerRadius="5 10 15 20" ClipToBounds="True"  Width="150" Height="150">
+    <Border Grid.Row="4" Grid.Column="3" CornerRadius="5 10 15 20" ClipToBounds="True" Width="150" Height="150">
       <Image Source="/Assets/cat5.jpg" Width="150" Height="150" />
     </Border>
+
+    <StackPanel Grid.Row="5" Grid.Column="0" HorizontalAlignment="Left">
+      <TextBlock TextWrapping="Wrap">
+        <TextBlock.Text>
+          You can set CurrentImage property by youself. This sets Source back to null.
+        </TextBlock.Text>
+      </TextBlock>
+      <TextBlock>
+        <Run>Source: </Run>
+        <Run Text="{Binding #CurrentImageExample.Source}"></Run>
+      </TextBlock>
+      <TextBlock>
+        <Run>CurrentImage: </Run>
+        <Run Text="{Binding #CurrentImageExample.CurrentImage, Converter={x:Static converters:GetClassNameConverter.Instance}, Mode=OneWay}" />
+      </TextBlock>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+        <Button Click="SetSourceButton_OnClick">Set Source</Button>
+        <Button Click="SetCurrentImageButton_OnClick">Set CurrentImage</Button>
+      </StackPanel>
+    </StackPanel>
+    <asyncImageLoader:AdvancedImage Grid.Row="5" Grid.Column="2"
+                                    Name="CurrentImageExample"
+                                    Width="150" Height="150"
+                                    Source="/Assets/cat5.jpg" />
   </Grid>
 </UserControl>
