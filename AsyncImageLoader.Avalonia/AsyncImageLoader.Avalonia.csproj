@@ -15,9 +15,9 @@
         <RepositoryType>git</RepositoryType>
         <PackageTags>image cross-platform avalonia avaloniaui c-sharp-library</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>3.1.0</Version>
+        <Version>3.2.0</Version>
         <PackageReleaseNotes>
-- Bitmap loading on background thread by @jobmarley
+- Add support for existing IImage loading in AdvancedImage
         </PackageReleaseNotes>
     </PropertyGroup>
 
