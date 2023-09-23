@@ -186,20 +186,22 @@ public class AdvancedImage : ContentControl
 
     private async void UpdateImage(string? source, IAsyncImageLoader? loader)
     {
-		_updateCancellationToken?.Cancel();
-		_updateCancellationToken?.Dispose();
-        _updateCancellationToken = null;
+		var cancellationTokenSource = new CancellationTokenSource();
+
+        var oldCancellationToken = Interlocked.Exchange(ref _updateCancellationToken, cancellationTokenSource);
+        oldCancellationToken?.Cancel();
+        oldCancellationToken?.Dispose();
+        
         if (source is null && CurrentImage is not ImageWrapper) {
             // User provided image himself
             return;
         }
         
-		var cancellationTokenSource = _updateCancellationToken = new CancellationTokenSource();
 		IsLoading = true;
 		CurrentImage = null;
 
         
-		Bitmap? bitmap = await Task.Run(async () =>
+		var bitmap = await Task.Run(async () =>
 		{
 			try
 			{
@@ -230,7 +232,7 @@ public class AdvancedImage : ContentControl
 			{
 				return null;
 			}
-		});
+		}, CancellationToken.None);
 
 		if (cancellationTokenSource.IsCancellationRequested)
             return;

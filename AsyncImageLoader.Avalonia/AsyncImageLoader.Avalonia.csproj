@@ -15,9 +15,9 @@
         <RepositoryType>git</RepositoryType>
         <PackageTags>image cross-platform avalonia avaloniaui c-sharp-library</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>3.2.0</Version>
+        <Version>3.2.1-rc1</Version>
         <PackageReleaseNotes>
-- Add support for existing IImage loading in AdvancedImage
+- Tries to fix "CancellationTokenSource has been disposed" when redrawn rapidly in virtualizing panels
         </PackageReleaseNotes>
     </PropertyGroup>
 
