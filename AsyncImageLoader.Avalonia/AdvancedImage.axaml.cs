@@ -189,8 +189,14 @@ public class AdvancedImage : ContentControl
 		var cancellationTokenSource = new CancellationTokenSource();
 
         var oldCancellationToken = Interlocked.Exchange(ref _updateCancellationToken, cancellationTokenSource);
-        oldCancellationToken?.Cancel();
-        oldCancellationToken?.Dispose();
+
+        try
+        {
+            oldCancellationToken?.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+        }
         
         if (source is null && CurrentImage is not ImageWrapper) {
             // User provided image himself
@@ -232,6 +238,11 @@ public class AdvancedImage : ContentControl
 			{
 				return null;
 			}
+	                finally
+		        {
+		                cancellationTokenSource.Dispose();
+			}
+   
 		}, CancellationToken.None);
 
 		if (cancellationTokenSource.IsCancellationRequested)
