@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Logging;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -74,6 +75,7 @@ public class AdvancedImage : ContentControl
     private bool _shouldLoaderChangeTriggerUpdate;
 
     private CancellationTokenSource? _updateCancellationToken;
+    private readonly ParametrizedLogger? _logger;
 
     static AdvancedImage()
     {
@@ -89,6 +91,7 @@ public class AdvancedImage : ContentControl
     public AdvancedImage(Uri? baseUri)
     {
         _baseUri = baseUri;
+        _logger = Logger.TryGet(LogEventLevel.Error, ImageLoader.AsyncImageLoaderLogArea);
     }
 
     /// <summary>
@@ -239,6 +242,12 @@ public class AdvancedImage : ContentControl
             }
             catch (TaskCanceledException)
             {
+                return null;
+            }
+            catch (Exception e)
+            {
+                _logger?.Log(this, "AdvancedImage image resolution failed: {0}", e);
+
                 return null;
             }
             finally

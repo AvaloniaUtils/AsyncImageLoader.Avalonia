@@ -33,7 +33,7 @@ public class BaseWebImageLoader : IAsyncImageLoader {
     public BaseWebImageLoader(HttpClient httpClient, bool disposeHttpClient) {
         HttpClient = httpClient;
         _shouldDisposeHttpClient = disposeHttpClient;
-        _logger = Logger.TryGet(LogEventLevel.Information, ImageLoader.AsyncImageLoaderLogArea);
+        _logger = Logger.TryGet(LogEventLevel.Error, ImageLoader.AsyncImageLoaderLogArea);
     }
 
     protected HttpClient HttpClient { get; }
@@ -69,7 +69,10 @@ public class BaseWebImageLoader : IAsyncImageLoader {
             await SaveToGlobalCache(url, externalBytes).ConfigureAwait(false);
             return bitmap;
         }
-        catch (Exception) {
+        catch (Exception e)
+        {
+            _logger?.Log(this, "Failed to resolve image: {RequestUri}\nException: {Exception}", url, e);
+
             return null;
         }
     }
@@ -121,7 +124,9 @@ public class BaseWebImageLoader : IAsyncImageLoader {
         try {
             return await HttpClient.GetByteArrayAsync(url).ConfigureAwait(false);
         }
-        catch (Exception) {
+        catch (Exception e) {
+            _logger?.Log(this,
+                "Failed to resolve image from request with uri: {RequestUri}\nException: {Exception}", url, e);
             return null;
         }
     }

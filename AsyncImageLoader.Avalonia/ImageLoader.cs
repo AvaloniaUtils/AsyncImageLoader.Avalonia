@@ -7,12 +7,14 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using System.Collections.Concurrent;
+using Avalonia.Logging;
 
 namespace AsyncImageLoader; 
 
 public static class ImageLoader
 {
-    public const string AsyncImageLoaderLogArea = "AsyncImageLoader";
+	private static readonly ParametrizedLogger? Logger;
+	public const string AsyncImageLoaderLogArea = "AsyncImageLoader";
 
     public static readonly AttachedProperty<string?> SourceProperty =
         AvaloniaProperty.RegisterAttached<Image, string?>("Source", typeof(ImageLoader));
@@ -23,16 +25,17 @@ public static class ImageLoader
     static ImageLoader()
     {
         SourceProperty.Changed.AddClassHandler<Image>(OnSourceChanged);
+        Logger = Avalonia.Logging.Logger.TryGet(LogEventLevel.Error, AsyncImageLoaderLogArea);
     }
 
     public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
 
-	private static ConcurrentDictionary<Image, CancellationTokenSource> _pendingOperations = new ConcurrentDictionary<Image, CancellationTokenSource>();
+	private static readonly ConcurrentDictionary<Image, CancellationTokenSource> PendingOperations = new();
 	private static async void OnSourceChanged(Image sender, AvaloniaPropertyChangedEventArgs args) {
 		var url = args.GetNewValue<string?>();
 
 		// Cancel/Add new pending operation
-		CancellationTokenSource? cts = _pendingOperations.AddOrUpdate(sender, new CancellationTokenSource(),
+		CancellationTokenSource? cts = PendingOperations.AddOrUpdate(sender, new CancellationTokenSource(),
 			(x, y) =>
 			{
 				y.Cancel();
@@ -41,7 +44,7 @@ public static class ImageLoader
 
 		if (url == null)
 		{
-			((ICollection<KeyValuePair<Image, CancellationTokenSource>>)_pendingOperations).Remove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
+			((ICollection<KeyValuePair<Image, CancellationTokenSource>>)PendingOperations).Remove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
 			sender.Source = null;
 			return;
 		}
@@ -62,13 +65,19 @@ public static class ImageLoader
 			{
 				return null;
 			}
+			catch (Exception e)
+			{
+				Logger?.Log(LogEventLevel.Error, "ImageLoader image resolution failed: {0}", e);
+
+				return null;
+			}
 		});
 
 		if (bitmap != null && !cts.Token.IsCancellationRequested)
 			sender.Source = bitmap!;
 
 		// "It is not guaranteed to be thread safe by ICollection, but ConcurrentDictionary's implementation is. Additionally, we recently exposed this API for .NET 5 as a public ConcurrentDictionary.TryRemove"
-		((ICollection<KeyValuePair<Image, CancellationTokenSource>>)_pendingOperations).Remove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
+		((ICollection<KeyValuePair<Image, CancellationTokenSource>>)PendingOperations).Remove(new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
 		SetIsLoading(sender, false);
 	}
 
