@@ -1,12 +1,17 @@
-﻿using AsyncImageLoader.Loaders;
+﻿using System;
+using AsyncImageLoader.Loaders;
 using Avalonia;
+using Avalonia.Logging;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 
 namespace AsyncImageLoader {
     public static class ImageBrushLoader {
+        private static readonly ParametrizedLogger? Logger;
         public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
         static ImageBrushLoader() {
             SourceProperty.Changed.AddClassHandler<ImageBrush>(OnSourceChanged);
+            Logger = Avalonia.Logging.Logger.TryGet(LogEventLevel.Error, ImageLoader.AsyncImageLoaderLogArea);
         }
 
         private static async void OnSourceChanged(ImageBrush imageBrush, AvaloniaPropertyChangedEventArgs args) {
@@ -16,9 +21,19 @@ namespace AsyncImageLoader {
             
             SetIsLoading(imageBrush, true);
 
-            var bitmap = newValue == null
-                ? null
-                : await AsyncImageLoader.ProvideImageAsync(newValue);
+            Bitmap? bitmap = null;
+            try
+            {
+                if (newValue is not null)
+                {
+                    bitmap = await AsyncImageLoader.ProvideImageAsync(newValue);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger?.Log("ImageBrushLoader", "ImageBrushLoader image resolution failed: {0}", e);
+            }
+            
             if (GetSource(imageBrush) != newValue) return;
             imageBrush.Source = bitmap;
 
