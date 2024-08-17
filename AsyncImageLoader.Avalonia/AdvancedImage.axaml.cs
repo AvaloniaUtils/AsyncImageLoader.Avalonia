@@ -8,7 +8,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 
-namespace AsyncImageLoader; 
+namespace AsyncImageLoader;
 
 public class AdvancedImage : ContentControl
 {
@@ -177,8 +177,10 @@ public class AdvancedImage : ContentControl
         base.OnPropertyChanged(change);
     }
 
-    private void ClearSourceIfUserProvideImage() {
-        if (CurrentImage is not null and not ImageWrapper) {
+    private void ClearSourceIfUserProvideImage()
+    {
+        if (CurrentImage is not null and not ImageWrapper)
+        {
             // User provided image himself
             Source = null;
         }
@@ -186,7 +188,7 @@ public class AdvancedImage : ContentControl
 
     private async void UpdateImage(string? source, IAsyncImageLoader? loader)
     {
-		var cancellationTokenSource = new CancellationTokenSource();
+        var cancellationTokenSource = new CancellationTokenSource();
 
         var oldCancellationToken = Interlocked.Exchange(ref _updateCancellationToken, cancellationTokenSource);
 
@@ -197,59 +199,59 @@ public class AdvancedImage : ContentControl
         catch (ObjectDisposedException)
         {
         }
-        
-        if (source is null && CurrentImage is not ImageWrapper) {
+
+        if (source is null && CurrentImage is not ImageWrapper)
+        {
             // User provided image himself
             return;
         }
-        
-		IsLoading = true;
-		CurrentImage = null;
 
-        
-		var bitmap = await Task.Run(async () =>
-		{
-			try
-			{
-				if (source == null)
-					return null;
+        IsLoading = true;
+        CurrentImage = null;
 
-				// A small delay allows to cancel early if the image goes out of screen too fast (eg. scrolling)
-				// The Bitmap constructor is expensive and cannot be cancelled
-				await Task.Delay(10, cancellationTokenSource.Token);
 
-				// Hack to support relative URI
-				// TODO: Refactor IAsyncImageLoader to support BaseUri 
-				try
-				{
-					var uri = new Uri(source, UriKind.RelativeOrAbsolute);
-					if (AssetLoader.Exists(uri, _baseUri))
+        var bitmap = await Task.Run(async () =>
+        {
+            try
+            {
+                if (source == null)
+                    return null;
+
+                // A small delay allows to cancel early if the image goes out of screen too fast (eg. scrolling)
+                // The Bitmap constructor is expensive and cannot be cancelled
+                await Task.Delay(10, cancellationTokenSource.Token);
+
+                // Hack to support relative URI
+                // TODO: Refactor IAsyncImageLoader to support BaseUri 
+                try
+                {
+                    var uri = new Uri(source, UriKind.RelativeOrAbsolute);
+                    if (AssetLoader.Exists(uri, _baseUri))
                         return new Bitmap(AssetLoader.Open(uri, _baseUri));
-				}
-				catch (Exception)
-				{
-					// ignored
-				}
+                }
+                catch (Exception)
+                {
+                    // ignored
+                }
 
-				loader ??= ImageLoader.AsyncImageLoader;
-				return await loader.ProvideImageAsync(source);
-			}
-			catch (TaskCanceledException)
-			{
-				return null;
-			}
-	                finally
-		        {
-		                cancellationTokenSource.Dispose();
-			}
-   
-		}, CancellationToken.None);
+                loader ??= ImageLoader.AsyncImageLoader;
+                return await loader.ProvideImageAsync(source);
+            }
+            catch (TaskCanceledException)
+            {
+                return null;
+            }
+            finally
+            {
+                cancellationTokenSource.Dispose();
+            }
+        }, CancellationToken.None);
 
-		if (cancellationTokenSource.IsCancellationRequested)
+        if (cancellationTokenSource.IsCancellationRequested)
             return;
         CurrentImage = bitmap is null ? null : new ImageWrapper(bitmap);
         IsLoading = false;
-	}
+    }
 
     private void UpdateCornerRadius(CornerRadius radius)
     {
@@ -308,14 +310,19 @@ public class AdvancedImage : ContentControl
             ? Stretch.CalculateSize(finalSize, CurrentImage.Size)
             : base.ArrangeOverride(finalSize);
     }
-    
-    public sealed class ImageWrapper : IImage {
+
+    public sealed class ImageWrapper : IImage
+    {
         public IImage ImageImplementation { get; }
-        internal ImageWrapper(IImage imageImplementation) {
+
+        internal ImageWrapper(IImage imageImplementation)
+        {
             ImageImplementation = imageImplementation;
         }
+
         /// <inheritdoc />
-        public void Draw(DrawingContext context, Rect sourceRect, Rect destRect) {
+        public void Draw(DrawingContext context, Rect sourceRect, Rect destRect)
+        {
             ImageImplementation.Draw(context, sourceRect, destRect);
         }
 

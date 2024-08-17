@@ -5,7 +5,7 @@
         <Nullable>enable</Nullable>
         <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
         <RootNamespace>AsyncImageLoader</RootNamespace>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        
         <Title>AsyncImageLoader.Avalonia</Title>
         <Authors>SKProCH</Authors>
         <Description>Provides way to asynchronous bitmap loading from web for Avalonia Image control and more</Description>
@@ -15,10 +15,6 @@
         <RepositoryType>git</RepositoryType>
         <PackageTags>image cross-platform avalonia avaloniaui c-sharp-library</PackageTags>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>3.2.1</Version>
-        <PackageReleaseNotes>
-- Fix ObjectDisposedException in Cancellation token access (#19)
-        </PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
