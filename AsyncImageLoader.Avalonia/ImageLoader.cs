@@ -58,6 +58,11 @@ public static class ImageLoader
 				// A small delay allows to cancel early if the image goes out of screen too fast (eg. scrolling)
 				// The Bitmap constructor is expensive and cannot be cancelled
 				await Task.Delay(10, cts.Token);
+				
+				if (AsyncImageLoader is IAdvancedAsyncImageLoader advancedLoader)
+				{
+					return await advancedLoader.ProvideImageAsync(url, TopLevel.GetTopLevel(sender)?.StorageProvider);
+				}
 
 				return await AsyncImageLoader.ProvideImageAsync(url);
 			}
