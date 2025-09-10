@@ -2,9 +2,12 @@
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using IStorageProvider = Avalonia.Platform.Storage.IStorageProvider;
 
 namespace AsyncImageLoader.Loaders; 
 
@@ -12,7 +15,7 @@ namespace AsyncImageLoader.Loaders;
 ///     Provides non cached way to asynchronously load images for <see cref="ImageLoader" />
 ///     Can be used as base class if you want to create custom caching mechanism
 /// </summary>
-public class BaseWebImageLoader : IAsyncImageLoader {
+public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
     private readonly ParametrizedLogger? _logger;
     private readonly bool _shouldDisposeHttpClient;
 
@@ -48,16 +51,23 @@ public class BaseWebImageLoader : IAsyncImageLoader {
         GC.SuppressFinalize(this);
     }
 
+    /// <inheritdoc />
+    public async Task<Bitmap?> ProvideImageAsync(string url, IStorageProvider? storageProvider = null)
+    {
+        return await LoadAsync(url, storageProvider).ConfigureAwait(false);
+    }
+
     /// <summary>
     ///     Attempts to load bitmap
     /// </summary>
     /// <param name="url">Target url</param>
+    /// <param name="storageProvider">Avalonia's storage provider</param>
     /// <returns>Bitmap</returns>
-    protected virtual async Task<Bitmap?> LoadAsync(string url) {
+    protected virtual async Task<Bitmap?> LoadAsync(string url, IStorageProvider? storageProvider) {
         var internalOrCachedBitmap =
-            await LoadFromLocalAsync(url).ConfigureAwait(false)
-         ?? await LoadFromInternalAsync(url).ConfigureAwait(false)
-         ?? await LoadFromGlobalCache(url).ConfigureAwait(false);
+            await LoadFromLocalAsync(url, storageProvider).ConfigureAwait(false)
+            ?? await LoadFromInternalAsync(url).ConfigureAwait(false)
+            ?? await LoadFromGlobalCache(url).ConfigureAwait(false);
         if (internalOrCachedBitmap != null) return internalOrCachedBitmap;
 
         try {
@@ -78,12 +88,30 @@ public class BaseWebImageLoader : IAsyncImageLoader {
     }
 
     /// <summary>
-    /// the url maybe is local file url,so if file exists ,we got a Bitmap
+    ///     Attempts to load bitmap
     /// </summary>
-    /// <param name="url"></param>
-    /// <returns></returns>
-    private Task<Bitmap?> LoadFromLocalAsync(string url) {
-        return Task.FromResult(File.Exists(url) ? new Bitmap(url) : null);
+    /// <param name="url">Target url</param>
+    /// <returns>Bitmap</returns>
+    protected virtual Task<Bitmap?> LoadAsync(string url)
+    {
+        return LoadAsync(url, null);
+    }
+
+    /// <summary>
+    /// The url maybe is local file url, so if file exists, we got a Bitmap
+    /// </summary>
+    /// <param name="url">Url to load</param>
+    /// <param name="storageProvider">Avalonia's storage provider</param>
+    private static async Task<Bitmap?> LoadFromLocalAsync(string url, IStorageProvider? storageProvider)
+    {
+        if (File.Exists(url))
+            return new Bitmap(url);
+
+        if (storageProvider is null) return null;
+        var fileInfo = await storageProvider.TryGetFileFromPathAsync(new Uri(url));
+        if (fileInfo is null) return null;
+        using var fileStream = await fileInfo.OpenReadAsync();
+        return new Bitmap(fileStream);
     }
 
     /// <summary>

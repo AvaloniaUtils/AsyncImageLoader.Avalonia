@@ -238,6 +238,12 @@ public class AdvancedImage : ContentControl
                 }
 
                 loader ??= ImageLoader.AsyncImageLoader;
+                
+                if (loader is IAdvancedAsyncImageLoader advancedLoader)
+                {
+                    return await advancedLoader.ProvideImageAsync(source, TopLevel.GetTopLevel(this)?.StorageProvider);
+                }
+                
                 return await loader.ProvideImageAsync(source);
             }
             catch (TaskCanceledException)
