@@ -7,6 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Avalonia.Platform.Storage;
 using IStorageProvider = Avalonia.Platform.Storage.IStorageProvider;
 
 namespace AsyncImageLoader.Loaders; 
@@ -108,7 +109,7 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
             return new Bitmap(url);
 
         if (storageProvider is null) return null;
-        var fileInfo = await storageProvider.TryGetFileFromPathAsync(new Uri(url));
+        var fileInfo = await storageProvider.TryGetFileFromPathAsync(url);
         if (fileInfo is null) return null;
         using var fileStream = await fileInfo.OpenReadAsync();
         return new Bitmap(fileStream);
