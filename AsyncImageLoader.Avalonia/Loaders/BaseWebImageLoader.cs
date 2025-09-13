@@ -2,15 +2,12 @@
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
-using Avalonia.Platform.Storage;
 using IStorageProvider = Avalonia.Platform.Storage.IStorageProvider;
 
-namespace AsyncImageLoader.Loaders; 
+namespace AsyncImageLoader.Loaders;
 
 /// <summary>
 ///     Provides non cached way to asynchronously load images for <see cref="ImageLoader" />
@@ -103,16 +100,28 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
     /// </summary>
     /// <param name="url">Url to load</param>
     /// <param name="storageProvider">Avalonia's storage provider</param>
-    private static async Task<Bitmap?> LoadFromLocalAsync(string url, IStorageProvider? storageProvider)
+    private async Task<Bitmap?> LoadFromLocalAsync(string url, IStorageProvider? storageProvider)
     {
         if (File.Exists(url))
             return new Bitmap(url);
 
         if (storageProvider is null) return null;
-        var fileInfo = await storageProvider.TryGetFileFromPathAsync(url);
-        if (fileInfo is null) return null;
-        using var fileStream = await fileInfo.OpenReadAsync();
-        return new Bitmap(fileStream);
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is not ("file" or "content")) return null;
+        
+        try
+        {
+            var fileInfo = await storageProvider.TryGetFileFromPathAsync(uri);
+            if (fileInfo is null) return null;
+            using var fileStream = await fileInfo.OpenReadAsync();
+            return new Bitmap(fileStream);
+        }
+        catch (Exception e)
+        {
+            _logger?.Log(this,
+                "Failed to resolve local image via storage provider with uri: {RequestUri}\nException: {Exception}",
+                url, e);
+            return null;
+        }
     }
 
     /// <summary>
