@@ -72,6 +72,7 @@ You can change the loader used by setting new one to the [ImageLoader.AsyncImage
 There are several loaders available out of the box: 
 - [BaseWebImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/Loaders/BaseCachedWebImageLoader.cs) - Provides non cached way to asynchronously load images without caching. Can be used as base class for custom loaders you dont want caching in any way.
 - [RamCachedWebImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/Loaders/RamCachedWebImageLoader.cs) - This is inheritor if BaseWebImageLoader with in memory images caching. Can be used as base class for custom loaders you want only inmemory caching.
-- [DiskCachedWebImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/Loaders/DiskCachedWebImageLoader.cs) - This is inheritor if RamCachedWebImageLoader with in memory caching and disk caching for downloaded from the internet images. Can be used as base class for custom loaders if you want disk caching out of the box.
+- [DiskCachedWebImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/Loaders/DiskCachedWebImageLoader.cs) - This is inheritor if RamCachedWebImageLoader with in memory caching and disk caching for downloaded from the internet images. Can be used as base class for custom loaders if you want disk caching out of the box.  
+  If you are using DiskCachedWebImageLoader on a non-PC platforms (mobile/wasm/etc) make sure to specify correct path for storing files on this platform. Default most likely doesn't work there.
 
 `RamCachedWebImageLoader` are used by default.
