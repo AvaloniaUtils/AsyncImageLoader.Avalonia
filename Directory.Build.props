@@ -1,0 +1,22 @@
+<Project>
+  <Import Project="SourceLink.props" Condition="'$(DisableSourceLink)' == ''"/>
+
+  <PropertyGroup>
+    <LangVersion>10</LangVersion>
+    <Nullable>enable</Nullable>
+    <NoWarn>NU5104, NU1507</NoWarn>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+
+    <Authors>SKProCH</Authors>
+    <PackageProjectUrl>https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+</Project>
