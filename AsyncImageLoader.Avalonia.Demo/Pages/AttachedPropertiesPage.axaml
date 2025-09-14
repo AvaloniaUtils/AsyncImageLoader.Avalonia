@@ -17,13 +17,13 @@
       </Style>
     </StackPanel.Styles>
 
-    <TextBlock TextAlignment="Center" Text="Images from Internet"/>
+    <TextBlock TextAlignment="Center" Text="Images from Internet" />
     <StackPanel Orientation="Horizontal">
       <Image asyncImageLoader:ImageLoader.Source="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat0.jpg" />
       <Image asyncImageLoader:ImageLoader.Source="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat1.jpg" />
     </StackPanel>
 
-    <TextBlock TextAlignment="Center" Text="Images from Internet via ImageBrush"/>
+    <TextBlock TextAlignment="Center" Text="Images from Internet via ImageBrush" />
     <StackPanel Orientation="Horizontal">
       <Border>
         <Border.Background>
@@ -38,12 +38,12 @@
         </Border.Background>
       </Border>
     </StackPanel>
-    <TextBlock TextAlignment="Center" Text="Images from Assets (AvaloniaResource)"/>
+    <TextBlock TextAlignment="Center" Text="Images from Assets (AvaloniaResource)" />
     <StackPanel Orientation="Horizontal">
       <Image asyncImageLoader:ImageLoader.Source="avares://AsyncImageLoader.Avalonia.Demo/Assets/cat4.jpg" />
       <Image asyncImageLoader:ImageLoader.Source="avares://AsyncImageLoader.Avalonia.Demo/Assets/cat5.jpg" />
     </StackPanel>
-    <TextBlock TextAlignment="Center" Text="Images from manifest resources (EmbeddedResource)"/>
+    <TextBlock TextAlignment="Center" Text="Images from manifest resources (EmbeddedResource)" />
     <StackPanel Orientation="Horizontal">
       <Image asyncImageLoader:ImageLoader.Source="resm:AsyncImageLoader.Avalonia.Demo.Assets.cat6.jpg" />
       <Image asyncImageLoader:ImageLoader.Source="resm:AsyncImageLoader.Avalonia.Demo.Assets.cat7.jpg" />

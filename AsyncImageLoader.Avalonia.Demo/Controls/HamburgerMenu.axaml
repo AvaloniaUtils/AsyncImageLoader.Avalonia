@@ -1,10 +1,10 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:catalog="using:ControlSamples">
+                    xmlns:controls="clr-namespace:AsyncImageLoader.Avalonia.Demo.Controls">
   <Design.PreviewWith>
     <Border Width="400"
             Height="150">
-      <catalog:HamburgerMenu>
+      <controls:HamburgerMenu>
         <FlyoutBase.AttachedFlyout>
           <Flyout>
             <TextBox Text="Hello World" />
@@ -16,7 +16,7 @@
           </UserControl>
         </TabItem>
         <TabItem Header="Item2" />
-      </catalog:HamburgerMenu>
+      </controls:HamburgerMenu>
     </Border>
   </Design.PreviewWith>
 
@@ -144,7 +144,7 @@
   </ControlTheme>
 
   <!--  HamburgerMenu  -->
-  <ControlTheme x:Key="{x:Type catalog:HamburgerMenu}" TargetType="catalog:HamburgerMenu">
+  <ControlTheme x:Key="{x:Type controls:HamburgerMenu}" TargetType="controls:HamburgerMenu">
     <Setter Property="Padding" Value="12 8 4 0" />
     <Setter Property="PaneBackground" Value="{DynamicResource SystemChromeMediumColor}" />
     <Setter Property="Background" Value="{DynamicResource SystemChromeMediumColor}" />

@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 
-namespace AsyncImageLoader.Loaders; 
+namespace AsyncImageLoader.Loaders;
 
 /// <summary>
 ///     Provides memory and disk cached way to asynchronously load images for <see cref="ImageLoader" />
@@ -20,7 +20,7 @@ public class DiskCachedWebImageLoader : RamCachedWebImageLoader {
     }
 
     public DiskCachedWebImageLoader(HttpClient httpClient, bool disposeHttpClient,
-                                    string cacheFolder = "Cache/Images/")
+        string cacheFolder = "Cache/Images/")
         : base(httpClient, disposeHttpClient) {
         _cacheFolder = cacheFolder;
     }
@@ -40,8 +40,7 @@ public class DiskCachedWebImageLoader : RamCachedWebImageLoader {
             await File.WriteAllBytesAsync(path, imageBytes).ConfigureAwait(false);
         }
 #else
-    protected override Task SaveToGlobalCache(string url, byte[] imageBytes)
-    {
+    protected override Task SaveToGlobalCache(string url, byte[] imageBytes) {
         var path = Path.Combine(_cacheFolder, CreateMD5(url));
         Directory.CreateDirectory(_cacheFolder);
         File.WriteAllBytes(path, imageBytes);

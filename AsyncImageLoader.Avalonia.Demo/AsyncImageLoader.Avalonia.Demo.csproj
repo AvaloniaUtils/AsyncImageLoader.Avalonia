@@ -1,28 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <OutputType>WinExe</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <IsPackable>false</IsPackable>
-    </PropertyGroup>
-    <ItemGroup>
-        <AvaloniaResource Include="Assets/avalonia-logo.ico" />
-        <None Remove=".gitignore" />
-    </ItemGroup>
-    <ItemGroup>
-        <PackageReference Include="Avalonia" Version="11.1.3" />
-        <PackageReference Include="Avalonia.Desktop" Version="11.1.3" />
-        <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.3" />
-        <PackageReference Include="Avalonia.Diagnostics" Version="11.1.3" />
-        <PackageReference Include="Avalonia.ReactiveUI" Version="11.1.3" />
-    </ItemGroup>
-    <ItemGroup>
-      <ProjectReference Include="..\AsyncImageLoader.Avalonia\AsyncImageLoader.Avalonia.csproj" />
-    </ItemGroup>
-    <ItemGroup>
-        <AvaloniaResource Include="Assets/cat4.jpg" />
-        <AvaloniaResource Include="Assets/cat5.jpg" />
-        <EmbeddedResource Include="Assets/cat6.jpg" />
-        <EmbeddedResource Include="Assets/cat7.jpg" />
-    </ItemGroup>
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/avalonia-logo.ico" />
+    <None Remove=".gitignore" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.1.3" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.1.3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.3" />
+    <PackageReference Include="Avalonia.Diagnostics" Version="11.1.3" />
+    <PackageReference Include="Avalonia.ReactiveUI" Version="11.1.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AsyncImageLoader.Avalonia\AsyncImageLoader.Avalonia.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/cat4.jpg" />
+    <AvaloniaResource Include="Assets/cat5.jpg" />
+    <EmbeddedResource Include="Assets/cat6.jpg" />
+    <EmbeddedResource Include="Assets/cat7.jpg" />
+  </ItemGroup>
 </Project>

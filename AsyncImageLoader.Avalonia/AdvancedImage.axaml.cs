@@ -11,8 +11,7 @@ using Avalonia.Platform;
 
 namespace AsyncImageLoader;
 
-public class AdvancedImage : ContentControl
-{
+public class AdvancedImage : ContentControl {
     /// <summary>
     ///     Defines the <see cref="Loader" /> property.
     /// </summary>
@@ -77,8 +76,7 @@ public class AdvancedImage : ContentControl
     private CancellationTokenSource? _updateCancellationToken;
     private readonly ParametrizedLogger? _logger;
 
-    static AdvancedImage()
-    {
+    static AdvancedImage() {
         AffectsRender<AdvancedImage>(CurrentImageProperty, StretchProperty, StretchDirectionProperty,
             CornerRadiusProperty);
         AffectsMeasure<AdvancedImage>(CurrentImageProperty, StretchProperty, StretchDirectionProperty);
@@ -88,8 +86,7 @@ public class AdvancedImage : ContentControl
     ///     Initializes a new instance of the <see cref="AdvancedImage" /> class.
     /// </summary>
     /// <param name="baseUri">The base URL for the XAML context.</param>
-    public AdvancedImage(Uri? baseUri)
-    {
+    public AdvancedImage(Uri? baseUri) {
         _baseUri = baseUri;
         _logger = Logger.TryGet(LogEventLevel.Error, ImageLoader.AsyncImageLoaderLogArea);
     }
@@ -99,15 +96,13 @@ public class AdvancedImage : ContentControl
     /// </summary>
     /// <param name="serviceProvider">The XAML service provider.</param>
     public AdvancedImage(IServiceProvider serviceProvider)
-        : this((serviceProvider.GetService(typeof(IUriContext)) as IUriContext)?.BaseUri)
-    {
+        : this((serviceProvider.GetService(typeof(IUriContext)) as IUriContext)?.BaseUri) {
     }
 
     /// <summary>
     ///     Gets or sets the URI for image that will be displayed.
     /// </summary>
-    public IAsyncImageLoader? Loader
-    {
+    public IAsyncImageLoader? Loader {
         get => GetValue(LoaderProperty);
         set => SetValue(LoaderProperty, value);
     }
@@ -115,8 +110,7 @@ public class AdvancedImage : ContentControl
     /// <summary>
     ///     Gets or sets the URI for image that will be displayed.
     /// </summary>
-    public string? Source
-    {
+    public string? Source {
         get => GetValue(SourceProperty);
         set => SetValue(SourceProperty, value);
     }
@@ -124,8 +118,7 @@ public class AdvancedImage : ContentControl
     /// <summary>
     ///     Gets or sets the value controlling whether the image should be reloaded after changing the loader.
     /// </summary>
-    public bool ShouldLoaderChangeTriggerUpdate
-    {
+    public bool ShouldLoaderChangeTriggerUpdate {
         get => _shouldLoaderChangeTriggerUpdate;
         set => SetAndRaise(ShouldLoaderChangeTriggerUpdateProperty, ref _shouldLoaderChangeTriggerUpdate, value);
     }
@@ -133,8 +126,7 @@ public class AdvancedImage : ContentControl
     /// <summary>
     ///     Gets a value indicating is image currently is loading state.
     /// </summary>
-    public bool IsLoading
-    {
+    public bool IsLoading {
         get => _isLoading;
         private set => SetAndRaise(IsLoadingProperty, ref _isLoading, value);
     }
@@ -142,8 +134,7 @@ public class AdvancedImage : ContentControl
     /// <summary>
     ///     Gets a currently loaded IImage.
     /// </summary>
-    public IImage? CurrentImage
-    {
+    public IImage? CurrentImage {
         get => _currentImage;
         set => SetAndRaise(CurrentImageProperty, ref _currentImage, value);
     }
@@ -151,8 +142,7 @@ public class AdvancedImage : ContentControl
     /// <summary>
     ///     Gets or sets a value controlling how the image will be stretched.
     /// </summary>
-    public Stretch Stretch
-    {
+    public Stretch Stretch {
         get => GetValue(StretchProperty);
         set => SetValue(StretchProperty, value);
     }
@@ -160,14 +150,12 @@ public class AdvancedImage : ContentControl
     /// <summary>
     ///     Gets or sets a value controlling in what direction the image will be stretched.
     /// </summary>
-    public StretchDirection StretchDirection
-    {
+    public StretchDirection StretchDirection {
         get => GetValue(StretchDirectionProperty);
         set => SetValue(StretchDirectionProperty, value);
     }
 
-    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
-    {
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
         if (change.Property == SourceProperty)
             UpdateImage(change.GetNewValue<string>(), Loader);
         else if (change.Property == LoaderProperty && ShouldLoaderChangeTriggerUpdate)
@@ -180,31 +168,25 @@ public class AdvancedImage : ContentControl
         base.OnPropertyChanged(change);
     }
 
-    private void ClearSourceIfUserProvideImage()
-    {
-        if (CurrentImage is not null and not ImageWrapper)
-        {
+    private void ClearSourceIfUserProvideImage() {
+        if (CurrentImage is not null and not ImageWrapper) {
             // User provided image himself
             Source = null;
         }
     }
 
-    private async void UpdateImage(string? source, IAsyncImageLoader? loader)
-    {
+    private async void UpdateImage(string? source, IAsyncImageLoader? loader) {
         var cancellationTokenSource = new CancellationTokenSource();
 
         var oldCancellationToken = Interlocked.Exchange(ref _updateCancellationToken, cancellationTokenSource);
 
-        try
-        {
+        try {
             oldCancellationToken?.Cancel();
         }
-        catch (ObjectDisposedException)
-        {
+        catch (ObjectDisposedException) {
         }
 
-        if (source is null && CurrentImage is not ImageWrapper)
-        {
+        if (source is null && CurrentImage is not ImageWrapper) {
             // User provided image himself
             return;
         }
@@ -213,10 +195,8 @@ public class AdvancedImage : ContentControl
         CurrentImage = null;
 
 
-        var bitmap = await Task.Run(async () =>
-        {
-            try
-            {
+        var bitmap = await Task.Run(async () => {
+            try {
                 if (source == null)
                     return null;
 
@@ -226,38 +206,32 @@ public class AdvancedImage : ContentControl
 
                 // Hack to support relative URI
                 // TODO: Refactor IAsyncImageLoader to support BaseUri 
-                try
-                {
+                try {
                     var uri = new Uri(source, UriKind.RelativeOrAbsolute);
                     if (AssetLoader.Exists(uri, _baseUri))
                         return new Bitmap(AssetLoader.Open(uri, _baseUri));
                 }
-                catch (Exception)
-                {
+                catch (Exception) {
                     // ignored
                 }
 
                 loader ??= ImageLoader.AsyncImageLoader;
-                
-                if (loader is IAdvancedAsyncImageLoader advancedLoader)
-                {
+
+                if (loader is IAdvancedAsyncImageLoader advancedLoader) {
                     return await advancedLoader.ProvideImageAsync(source, TopLevel.GetTopLevel(this)?.StorageProvider);
                 }
-                
+
                 return await loader.ProvideImageAsync(source);
             }
-            catch (TaskCanceledException)
-            {
+            catch (TaskCanceledException) {
                 return null;
             }
-            catch (Exception e)
-            {
+            catch (Exception e) {
                 _logger?.Log(this, "AdvancedImage image resolution failed: {0}", e);
 
                 return null;
             }
-            finally
-            {
+            finally {
                 cancellationTokenSource.Dispose();
             }
         }, CancellationToken.None);
@@ -268,8 +242,7 @@ public class AdvancedImage : ContentControl
         IsLoading = false;
     }
 
-    private void UpdateCornerRadius(CornerRadius radius)
-    {
+    private void UpdateCornerRadius(CornerRadius radius) {
         _isCornerRadiusUsed = radius != default;
         _cornerRadiusClip = new RoundedRect(new Rect(0, 0, Bounds.Width, Bounds.Height), radius);
     }
@@ -278,12 +251,10 @@ public class AdvancedImage : ContentControl
     ///     Renders the control.
     /// </summary>
     /// <param name="context">The drawing context.</param>
-    public override void Render(DrawingContext context)
-    {
+    public override void Render(DrawingContext context) {
         var source = CurrentImage;
 
-        if (source != null && Bounds is { Width: > 0, Height: > 0 })
-        {
+        if (source != null && Bounds is { Width: > 0, Height: > 0 }) {
             var viewPort = new Rect(Bounds.Size);
             var sourceSize = source.Size;
 
@@ -300,8 +271,7 @@ public class AdvancedImage : ContentControl
             context.DrawImage(source, sourceRect, destRect);
             pushedState?.Dispose();
         }
-        else
-        {
+        else {
             base.Render(context);
         }
     }
@@ -311,33 +281,28 @@ public class AdvancedImage : ContentControl
     /// </summary>
     /// <param name="availableSize">The available size.</param>
     /// <returns>The desired size of the control.</returns>
-    protected override Size MeasureOverride(Size availableSize)
-    {
+    protected override Size MeasureOverride(Size availableSize) {
         return CurrentImage != null
             ? Stretch.CalculateSize(availableSize, CurrentImage.Size, StretchDirection)
             : base.MeasureOverride(availableSize);
     }
 
     /// <inheritdoc />
-    protected override Size ArrangeOverride(Size finalSize)
-    {
+    protected override Size ArrangeOverride(Size finalSize) {
         return CurrentImage != null
             ? Stretch.CalculateSize(finalSize, CurrentImage.Size)
             : base.ArrangeOverride(finalSize);
     }
 
-    public sealed class ImageWrapper : IImage
-    {
+    public sealed class ImageWrapper : IImage {
         public IImage ImageImplementation { get; }
 
-        internal ImageWrapper(IImage imageImplementation)
-        {
+        internal ImageWrapper(IImage imageImplementation) {
             ImageImplementation = imageImplementation;
         }
 
         /// <inheritdoc />
-        public void Draw(DrawingContext context, Rect sourceRect, Rect destRect)
-        {
+        public void Draw(DrawingContext context, Rect sourceRect, Rect destRect) {
             ImageImplementation.Draw(context, sourceRect, destRect);
         }
 

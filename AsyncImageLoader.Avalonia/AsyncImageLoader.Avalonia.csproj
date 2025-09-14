@@ -1,21 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
-        <RootNamespace>AsyncImageLoader</RootNamespace>
-        
-        <Title>AsyncImageLoader.Avalonia</Title>
-        <Description>Provides way to asynchronous bitmap loading from web for Avalonia Image control and more</Description>
-        <PackageTags>image cross-platform avalonia avaloniaui c-sharp-library</PackageTags>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
+    <RootNamespace>AsyncImageLoader</RootNamespace>
 
-    <ItemGroup>
-        <None Include="../README.md" Pack="true" PackagePath="/" />
-    </ItemGroup>
+    <Title>AsyncImageLoader.Avalonia</Title>
+    <Description>Provides way to asynchronous bitmap loading from web for Avalonia Image control and more</Description>
+    <PackageTags>image cross-platform avalonia avaloniaui c-sharp-library</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Avalonia" Version="11.0.0" />
-    </ItemGroup>
+  <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.0.0" />
+  </ItemGroup>
 
 </Project>

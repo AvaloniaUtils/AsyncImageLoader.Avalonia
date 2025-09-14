@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 
-namespace AsyncImageLoader.Loaders; 
+namespace AsyncImageLoader.Loaders;
 
 /// <summary>
 ///     Provides memory cached way to asynchronously load images for <see cref="ImageLoader" />
@@ -17,7 +17,8 @@ public class RamCachedWebImageLoader : BaseWebImageLoader {
 
     /// <inheritdoc />
     public RamCachedWebImageLoader(HttpClient httpClient, bool disposeHttpClient) : base(httpClient,
-        disposeHttpClient) { }
+        disposeHttpClient) {
+    }
 
     /// <inheritdoc />
     public override async Task<Bitmap?> ProvideImageAsync(string url) {

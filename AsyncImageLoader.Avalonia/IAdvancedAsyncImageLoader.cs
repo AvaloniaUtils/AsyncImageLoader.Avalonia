@@ -5,8 +5,7 @@ using Avalonia.Platform.Storage;
 
 namespace AsyncImageLoader;
 
-public interface IAdvancedAsyncImageLoader : IDisposable
-{
+public interface IAdvancedAsyncImageLoader : IDisposable {
     /// <summary>
     ///     Loads image
     /// </summary>

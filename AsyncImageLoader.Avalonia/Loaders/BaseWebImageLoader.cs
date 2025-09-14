@@ -50,8 +50,7 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
     }
 
     /// <inheritdoc />
-    public async Task<Bitmap?> ProvideImageAsync(string url, IStorageProvider? storageProvider = null)
-    {
+    public async Task<Bitmap?> ProvideImageAsync(string url, IStorageProvider? storageProvider = null) {
         return await LoadAsync(url, storageProvider).ConfigureAwait(false);
     }
 
@@ -77,8 +76,7 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
             await SaveToGlobalCache(url, externalBytes).ConfigureAwait(false);
             return bitmap;
         }
-        catch (Exception e)
-        {
+        catch (Exception e) {
             _logger?.Log(this, "Failed to resolve image: {RequestUri}\nException: {Exception}", url, e);
 
             return null;
@@ -90,8 +88,7 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
     /// </summary>
     /// <param name="url">Target url</param>
     /// <returns>Bitmap</returns>
-    protected virtual Task<Bitmap?> LoadAsync(string url)
-    {
+    protected virtual Task<Bitmap?> LoadAsync(string url) {
         return LoadAsync(url, null);
     }
 
@@ -100,23 +97,20 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
     /// </summary>
     /// <param name="url">Url to load</param>
     /// <param name="storageProvider">Avalonia's storage provider</param>
-    private async Task<Bitmap?> LoadFromLocalAsync(string url, IStorageProvider? storageProvider)
-    {
+    private async Task<Bitmap?> LoadFromLocalAsync(string url, IStorageProvider? storageProvider) {
         if (File.Exists(url))
             return new Bitmap(url);
 
         if (storageProvider is null) return null;
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is not ("file" or "content")) return null;
-        
-        try
-        {
+
+        try {
             var fileInfo = await storageProvider.TryGetFileFromPathAsync(uri);
             if (fileInfo is null) return null;
             using var fileStream = await fileInfo.OpenReadAsync();
             return new Bitmap(fileStream);
         }
-        catch (Exception e)
-        {
+        catch (Exception e) {
             _logger?.Log(this,
                 "Failed to resolve local image via storage provider with uri: {RequestUri}\nException: {Exception}",
                 url, e);
