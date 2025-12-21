@@ -61,8 +61,19 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
     /// <param name="storageProvider">Avalonia's storage provider</param>
     /// <returns>Bitmap</returns>
     protected virtual async Task<Bitmap?> LoadAsync(string url, IStorageProvider? storageProvider) {
+        var fromLocal = await LoadFromLocalAsync(url, storageProvider).ConfigureAwait(false);
+        if (fromLocal != null) return fromLocal;
+        return await LoadAsync(url).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Attempts to load bitmap
+    /// </summary>
+    /// <param name="url">Target url</param>
+    /// <returns>Bitmap</returns>
+    protected virtual async Task<Bitmap?> LoadAsync(string url) {
         var internalOrCachedBitmap =
-            await LoadFromLocalAsync(url, storageProvider).ConfigureAwait(false)
+            await LoadFromLocalAsync(url, null).ConfigureAwait(false)
             ?? await LoadFromInternalAsync(url).ConfigureAwait(false)
             ?? await LoadFromGlobalCache(url).ConfigureAwait(false);
         if (internalOrCachedBitmap != null) return internalOrCachedBitmap;
@@ -81,15 +92,6 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
 
             return null;
         }
-    }
-
-    /// <summary>
-    ///     Attempts to load bitmap
-    /// </summary>
-    /// <param name="url">Target url</param>
-    /// <returns>Bitmap</returns>
-    protected virtual Task<Bitmap?> LoadAsync(string url) {
-        return LoadAsync(url, null);
     }
 
     /// <summary>
