@@ -40,7 +40,7 @@ public static class ImageLoader {
                 return new CancellationTokenSource();
             });
 
-        if (url == null) {
+        if (string.IsNullOrWhiteSpace(url)) {
             ((ICollection<KeyValuePair<Image, CancellationTokenSource>>)PendingOperations).Remove(
                 new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
             sender.Source = null;
