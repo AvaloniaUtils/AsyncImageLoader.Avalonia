@@ -34,7 +34,7 @@ public static class ImageLoader {
         var url = args.GetNewValue<string?>();
 
         // Cancel/Add new pending operation
-        CancellationTokenSource? cts = PendingOperations.AddOrUpdate(sender, new CancellationTokenSource(),
+        var cts = PendingOperations.AddOrUpdate(sender, new CancellationTokenSource(),
             (x, y) => {
                 y.Cancel();
                 return new CancellationTokenSource();
@@ -49,7 +49,7 @@ public static class ImageLoader {
 
         SetIsLoading(sender, true);
 
-        Bitmap? bitmap = await Task.Run(async () => {
+        var bitmap = await Task.Run(async () => {
             try {
                 // A small delay allows to cancel early if the image goes out of screen too fast (eg. scrolling)
                 // The Bitmap constructor is expensive and cannot be cancelled
