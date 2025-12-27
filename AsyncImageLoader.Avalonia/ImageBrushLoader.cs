@@ -25,8 +25,8 @@ public static class ImageBrushLoader {
 
         Bitmap? bitmap = null;
         try {
-            if (newValue is not null) {
-                bitmap = await AsyncImageLoader.ProvideImageAsync(newValue);
+            if (!string.IsNullOrWhiteSpace(newValue)) {
+                bitmap = await AsyncImageLoader.ProvideImageAsync(newValue!);
             }
         }
         catch (Exception e) {

@@ -197,7 +197,7 @@ public class AdvancedImage : ContentControl {
 
         var bitmap = await Task.Run(async () => {
             try {
-                if (source == null)
+                if (string.IsNullOrWhiteSpace(source))
                     return null;
 
                 // A small delay allows to cancel early if the image goes out of screen too fast (eg. scrolling)
