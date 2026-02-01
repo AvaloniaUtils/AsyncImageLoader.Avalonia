@@ -178,7 +178,10 @@ public class AdvancedImage : ContentControl {
             ClearSourceIfUserProvideImage();
         else if (change.Property == CornerRadiusProperty)
             UpdateCornerRadius(change.GetNewValue<CornerRadius>());
-        else if (change.Property == BoundsProperty && CornerRadius != default) UpdateCornerRadius(CornerRadius);
+        else if (change.Property == BoundsProperty && CornerRadius != default)
+            UpdateCornerRadius(CornerRadius);
+        else if (change.Property == FallbackImageProperty && Source == null)
+            UpdateImage(null, null);
         base.OnPropertyChanged(change);
     }
 
@@ -200,6 +203,10 @@ public class AdvancedImage : ContentControl {
         catch (ObjectDisposedException) {
         }
 
+        if (source is null && FallbackImage != null) {
+            CurrentImage =  FallbackImage;
+        }
+
         if (source is null && CurrentImage is not ImageWrapper) {
             // User provided image himself
             return;
@@ -207,7 +214,6 @@ public class AdvancedImage : ContentControl {
 
         IsLoading = true;
         CurrentImage = null;
-
 
         var bitmap = await Task.Run(async () => {
             try {
@@ -252,9 +258,6 @@ public class AdvancedImage : ContentControl {
 
         if (cancellationTokenSource.IsCancellationRequested)
             return;
-
-        if (bitmap is null && FallbackImage != null)
-            bitmap = FallbackImage;
 
         CurrentImage = bitmap is null ? null : new ImageWrapper(bitmap);
         IsLoading = false;
