@@ -24,6 +24,13 @@ public class AdvancedImage : ContentControl {
     public static readonly StyledProperty<string?> SourceProperty =
         AvaloniaProperty.Register<AdvancedImage, string?>(nameof(Source));
 
+
+    /// <summary>
+    ///     Defines the <see cref="FallbackImage" /> property.
+    /// </summary>
+    public static readonly StyledProperty<Bitmap?> FallbackImageProperty =
+        AvaloniaProperty.Register<AdvancedImage, Bitmap?>(nameof(FallbackImage));
+
     /// <summary>
     ///     Defines the <see cref="ShouldLoaderChangeTriggerUpdate" /> property.
     /// </summary>
@@ -115,6 +122,13 @@ public class AdvancedImage : ContentControl {
         set => SetValue(SourceProperty, value);
     }
 
+    /// <summary>
+    ///     Gets or sets the Bitmap for Fallback image that will be displayed if the Source image isn't loaded.
+    /// </summary>
+    public Bitmap? FallbackImage {
+        get => GetValue(FallbackImageProperty);
+        set => SetValue(FallbackImageProperty, value);
+    }
     /// <summary>
     ///     Gets or sets the value controlling whether the image should be reloaded after changing the loader.
     /// </summary>
@@ -238,6 +252,10 @@ public class AdvancedImage : ContentControl {
 
         if (cancellationTokenSource.IsCancellationRequested)
             return;
+
+        if (bitmap is null && FallbackImage != null)
+            bitmap = FallbackImage;
+
         CurrentImage = bitmap is null ? null : new ImageWrapper(bitmap);
         IsLoading = false;
     }
