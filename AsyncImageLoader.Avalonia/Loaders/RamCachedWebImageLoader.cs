@@ -28,4 +28,8 @@ public class RamCachedWebImageLoader : BaseWebImageLoader {
         if (bitmap == null) _memoryCache.TryRemove(url, out _);
         return bitmap;
     }
+
+    public void ClearRamCache() {
+        _memoryCache.Clear();
+    }
 }
