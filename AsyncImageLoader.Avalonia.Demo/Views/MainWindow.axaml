@@ -32,5 +32,8 @@
     <TabItem Header="AdvancedImage control">
       <pages:AdvancedImagePage />
     </TabItem>
+    <TabItem Header="Stress Test">
+      <pages:AdvancedImageSafeMemoryPage />
+    </TabItem>
   </controls:HamburgerMenu>
 </Window>

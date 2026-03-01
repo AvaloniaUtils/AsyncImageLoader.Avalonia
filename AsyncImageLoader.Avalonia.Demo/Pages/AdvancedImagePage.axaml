@@ -28,6 +28,7 @@
     </StackPanel>
     <asyncImageLoader:AdvancedImage
       Name="ReloadableAdvancedImage"
+      AutoCleanupEnabled="True"
       Grid.Column="2" Grid.Row="1" Width="150" Height="150"
       Source="https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/raw/master/AsyncImageLoader.Avalonia.Demo/Assets/cat0.jpg"
       Loader="{x:Static services:LongLoader.Instance}" />
@@ -40,7 +41,8 @@
         Current images loaded from AvaloniaResource Source="../Assets/cat4.jpg".
       </TextBlock.Text>
     </TextBlock>
-    <asyncImageLoader:AdvancedImage Grid.Row="2" Grid.Column="2" Width="150" Height="150" Source="../Assets/cat4.jpg" />
+    <asyncImageLoader:AdvancedImage Grid.Row="2" Grid.Column="2" Width="150" Height="150" Source="../Assets/cat4.jpg"
+                                    AutoCleanupEnabled="True"/>
     <Image Grid.Row="2" Grid.Column="3" Source="../Assets/cat4.jpg" Width="150" Height="150" />
 
     <TextBlock Grid.Row="3" Grid.Column="0" TextWrapping="Wrap">
@@ -60,7 +62,9 @@
     </TextBlock>
     <asyncImageLoader:AdvancedImage Grid.Row="4" Grid.Column="2"
                                     Width="150" Height="150" CornerRadius="5 10 15 20"
-                                    Source="/Assets/cat5.jpg" />
+                                    Source="/Assets/cat5.jpg"
+                                    AutoCleanupEnabled="True"
+                                     />
     <Border Grid.Row="4" Grid.Column="3" CornerRadius="5 10 15 20" ClipToBounds="True" Width="150" Height="150">
       <Image Source="/Assets/cat5.jpg" Width="150" Height="150" />
     </Border>
@@ -87,6 +91,8 @@
     <asyncImageLoader:AdvancedImage Grid.Row="5" Grid.Column="2"
                                     Name="CurrentImageExample"
                                     Width="150" Height="150"
-                                    Source="/Assets/cat5.jpg" />
+                                    Source="/Assets/cat5.jpg"
+                                    AutoCleanupEnabled="True"
+                                     />
   </Grid>
 </UserControl>

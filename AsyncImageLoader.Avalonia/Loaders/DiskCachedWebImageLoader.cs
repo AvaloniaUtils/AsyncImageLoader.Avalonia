@@ -1,8 +1,5 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Net.Http;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 
@@ -33,28 +30,21 @@ public class DiskCachedWebImageLoader : RamCachedWebImageLoader {
     }
 
 #if NETSTANDARD2_1
-        protected override async Task SaveToGlobalCache(string url, byte[] imageBytes) {
-            var path = Path.Combine(_cacheFolder, CreateMD5(url));
-
-            Directory.CreateDirectory(_cacheFolder);
-            await File.WriteAllBytesAsync(path, imageBytes).ConfigureAwait(false);
-        }
-#else
-    protected override Task SaveToGlobalCache(string url, byte[] imageBytes) {
+    protected override async Task SaveToGlobalCache(string url, byte[] imageBytes) 
+    {
         var path = Path.Combine(_cacheFolder, CreateMD5(url));
+
+        Directory.CreateDirectory(_cacheFolder);
+        await File.WriteAllBytesAsync(path, imageBytes).ConfigureAwait(false);
+
+    }
+#else
+    protected override async Task SaveToGlobalCache(string url, byte[] imageBytes) 
+    {
+        var path = Path.Combine(_cacheFolder, CreateMD5(url));
+        
         Directory.CreateDirectory(_cacheFolder);
         File.WriteAllBytes(path, imageBytes);
-        return Task.CompletedTask;
     }
 #endif
-
-    protected static string CreateMD5(string input) {
-        // Use input string to calculate MD5 hash
-        using var md5 = MD5.Create();
-        var inputBytes = Encoding.ASCII.GetBytes(input);
-        var hashBytes = md5.ComputeHash(inputBytes);
-
-        // Convert the byte array to hexadecimal string
-        return BitConverter.ToString(hashBytes).Replace("-", "");
-    }
 }

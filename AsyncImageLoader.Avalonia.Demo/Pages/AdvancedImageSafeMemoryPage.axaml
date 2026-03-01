@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:asyncImageLoader="clr-namespace:AsyncImageLoader;assembly=AsyncImageLoader.Avalonia"
+             xmlns:vm="clr-namespace:AsyncImageLoader.Avalonia.Demo.ViewModels"
+             x:Class="AsyncImageLoader.Avalonia.Demo.Pages.AdvancedImageSafeMemoryPage"
+             x:DataType="vm:AdvancedImageSafeMemoryViewModel">
+
+  <Grid RowDefinitions="Auto, Auto,*">
+
+    <TextBlock
+      FontWeight="Bold"
+      Text="Example demonstrating image rendering under extreme load conditions."
+      Margin="0,0,0,8"/>
+    
+    <TextBlock
+      Grid.Row="1"
+      Text="Open AsyncImageLoader DevTools with Ctrl + I."
+      Margin="0,0,0,8"/>
+
+    <ItemsControl Grid.Row="1"
+                  ItemsSource="{Binding ImageUrls}">
+
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <VirtualizingStackPanel/>
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <Border Height="700">
+            <asyncImageLoader:AdvancedImage
+              Source="{Binding}"
+              Height="200"
+              Margin="4"
+              AutoCleanupEnabled="True"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"/>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+
+    </ItemsControl>
+
+  </Grid>
+</UserControl>

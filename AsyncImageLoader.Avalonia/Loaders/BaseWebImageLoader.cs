@@ -1,7 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
+using AsyncImageLoader.DevTools;
 using Avalonia.Logging;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
@@ -14,13 +17,13 @@ namespace AsyncImageLoader.Loaders;
 ///     Can be used as base class if you want to create custom caching mechanism
 /// </summary>
 public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
-    private readonly ParametrizedLogger? _logger;
+    protected readonly ParametrizedLogger? Logger;
     private readonly bool _shouldDisposeHttpClient;
 
     /// <summary>
     ///     Initializes a new instance with new <see cref="HttpClient" /> instance
     /// </summary>
-    public BaseWebImageLoader() : this(new HttpClient(), true) { }
+    public BaseWebImageLoader() : this(new HttpClient(new LoggingHandler()), true) { }
 
     /// <summary>
     ///     Initializes a new instance with the provided <see cref="HttpClient" />, and specifies whether that
@@ -34,7 +37,7 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
     public BaseWebImageLoader(HttpClient httpClient, bool disposeHttpClient) {
         HttpClient = httpClient;
         _shouldDisposeHttpClient = disposeHttpClient;
-        _logger = Logger.TryGet(LogEventLevel.Error, ImageLoader.AsyncImageLoaderLogArea);
+        Logger = Avalonia.Logging.Logger.TryGet(LogEventLevel.Error, ImageLoader.AsyncImageLoaderLogArea);
     }
 
     protected HttpClient HttpClient { get; }
@@ -50,7 +53,7 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
     }
 
     /// <inheritdoc />
-    public async Task<Bitmap?> ProvideImageAsync(string url, IStorageProvider? storageProvider = null) {
+    public virtual async Task<Bitmap?> ProvideImageAsync(string url, IStorageProvider? storageProvider = null) {
         return await LoadAsync(url, storageProvider).ConfigureAwait(false);
     }
 
@@ -62,6 +65,7 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
     /// <returns>Bitmap</returns>
     protected virtual async Task<Bitmap?> LoadAsync(string url, IStorageProvider? storageProvider) {
         var fromLocal = await LoadFromLocalAsync(url, storageProvider).ConfigureAwait(false);
+        
         if (fromLocal != null) return fromLocal;
         return await LoadAsync(url).ConfigureAwait(false);
     }
@@ -85,10 +89,11 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
             using var memoryStream = new MemoryStream(externalBytes);
             var bitmap = new Bitmap(memoryStream);
             await SaveToGlobalCache(url, externalBytes).ConfigureAwait(false);
+            
             return bitmap;
         }
         catch (Exception e) {
-            _logger?.Log(this, "Failed to resolve image: {RequestUri}\nException: {Exception}", url, e);
+            Logger?.Log(this, "Failed to resolve image: {RequestUri}\nException: {Exception}", url, e);
 
             return null;
         }
@@ -100,10 +105,10 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
     /// <param name="url">Url to load</param>
     /// <param name="storageProvider">Avalonia's storage provider</param>
     private async Task<Bitmap?> LoadFromLocalAsync(string url, IStorageProvider? storageProvider) {
-        if (File.Exists(url))
-            return new Bitmap(url);
-
+        if (File.Exists(url)) return new Bitmap(url);
+        
         if (storageProvider is null) return null;
+        
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || uri.Scheme is not ("file" or "content")) return null;
 
         try {
@@ -113,7 +118,7 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
             return new Bitmap(fileStream);
         }
         catch (Exception e) {
-            _logger?.Log(this,
+            Logger?.Log(this,
                 "Failed to resolve local image via storage provider with uri: {RequestUri}\nException: {Exception}",
                 url, e);
             return null;
@@ -142,7 +147,7 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
             return Task.FromResult(new Bitmap(AssetLoader.Open(uri)))!;
         }
         catch (Exception e) {
-            _logger?.Log(this,
+            Logger?.Log(this,
                 "Failed to resolve image from request with uri: {RequestUri}\nException: {Exception}", url, e);
             return Task.FromResult<Bitmap?>(null);
         }
@@ -159,7 +164,7 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
             return await HttpClient.GetByteArrayAsync(url).ConfigureAwait(false);
         }
         catch (Exception e) {
-            _logger?.Log(this,
+            Logger?.Log(this,
                 "Failed to resolve image from request with uri: {RequestUri}\nException: {Exception}", url, e);
             return null;
         }
@@ -172,6 +177,7 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
     /// <returns>Bitmap</returns>
     protected virtual Task<Bitmap?> LoadFromGlobalCache(string url) {
         // Current implementation does not provide global caching
+        
         return Task.FromResult<Bitmap?>(null);
     }
 
@@ -183,6 +189,7 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
     /// <returns>Bitmap</returns>
     protected virtual Task SaveToGlobalCache(string url, byte[] imageBytes) {
         // Current implementation does not provide global caching
+        
         return Task.CompletedTask;
     }
 
@@ -192,5 +199,15 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
 
     protected virtual void Dispose(bool disposing) {
         if (disposing && _shouldDisposeHttpClient) HttpClient.Dispose();
+    }
+    
+    protected static string CreateMD5(string input) {
+        // Use input string to calculate MD5 hash
+        using var md5 = MD5.Create();
+        var inputBytes = Encoding.ASCII.GetBytes(input);
+        var hashBytes = md5.ComputeHash(inputBytes);
+
+        // Convert the byte array to hexadecimal string
+        return BitConverter.ToString(hashBytes).Replace("-", "");
     }
 }

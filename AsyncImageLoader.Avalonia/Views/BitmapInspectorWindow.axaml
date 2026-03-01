@@ -1,0 +1,109 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:AsyncImageLoader.ViewModels"
+        Width="600"
+        Height="400"
+        MinWidth="520"
+        MinHeight="320"
+        x:DataType="vm:BitmapInspectorDesignViewModel"
+        x:Class="AsyncImageLoader.Views.BitmapInspectorWindow"
+        Title="AsyncImageLoader DevTools">
+  <TabControl Margin="5">
+    <TabItem Header="Memory">
+      <Grid RowDefinitions="Auto,Auto,*" Margin="8">
+
+        <TextBlock Text="Bitmaps"
+                   FontSize="16"
+                   FontWeight="Bold"
+                   Margin="0,0,0,8"/>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*,90,160,120" Margin="0,0,0,4">
+          <TextBlock Text="Key"/>
+          <TextBlock Grid.Column="1" Text="RefCount"/>
+          <TextBlock Grid.Column="2" Text="Last Released"/>
+          <TextBlock Grid.Column="3" Text="Estimated Size"/>
+        </Grid>
+
+        <ScrollViewer Grid.Row="2"
+                      VerticalScrollBarVisibility="Auto">
+
+          <ItemsControl ItemsSource="{Binding Items}">
+
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+
+                <Border Padding="2">
+                  <Grid ColumnDefinitions="*,90,160,120">
+
+                    <TextBlock Text="{Binding Key}"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"/>
+
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding RefCount}"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock Grid.Column="2"
+                               Text="{Binding LastReleasedFormatted}"
+                               VerticalAlignment="Center"/>
+
+                    <TextBlock Grid.Column="3"
+                               Text="{Binding EstimatedSizeFormatted}"
+                               VerticalAlignment="Center"/>
+
+                  </Grid>
+                </Border>
+
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+
+          </ItemsControl>
+
+        </ScrollViewer>
+
+      </Grid>
+    </TabItem>
+    <TabItem Header="Network">
+      <Grid Margin="8" RowDefinitions="Auto,*">
+        <TextBlock Text="HTTP Requests"
+                   FontSize="16"
+                   FontWeight="Bold"
+                   Margin="0,0,0,8"
+                   Grid.Row="0"/>
+
+        <!-- Grid interno para cabeçalho + lista -->
+        <Grid Grid.Row="1" RowDefinitions="Auto,*">
+      
+          <!-- Cabeçalho -->
+          <Grid ColumnDefinitions="*,60,60,60,80" Grid.Row="0" Margin="0,0,0,4">
+            <TextBlock Text="URL" Grid.Column="0"/>
+            <TextBlock Text="Method" Grid.Column="1"/>
+            <TextBlock Text="Status" Grid.Column="2"/>
+            <TextBlock Text="Duration" Grid.Column="3"/>
+            <TextBlock Text="Timestamp" Grid.Column="4"/>
+          </Grid>
+
+          <!-- Lista de logs -->
+          <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding HttpLogs}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Padding="2">
+                    <Grid ColumnDefinitions="*,60,60,60,80">
+                      <TextBlock Text="{Binding Url}" Grid.Column="0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                      <TextBlock Text="{Binding Method}" Grid.Column="1" VerticalAlignment="Center"/>
+                      <TextBlock Text="{Binding StatusCode}" Grid.Column="2" VerticalAlignment="Center"/>
+                      <TextBlock Text="{Binding Duration.TotalMilliseconds, StringFormat={}{0:0} ms}" Grid.Column="3" VerticalAlignment="Center"/>
+                      <TextBlock Text="{Binding Timestamp, StringFormat={}{0:HH:mm:ss}}" Grid.Column="4" VerticalAlignment="Center"/>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+
+        </Grid>
+      </Grid>
+    </TabItem>
+  </TabControl>
+</Window>

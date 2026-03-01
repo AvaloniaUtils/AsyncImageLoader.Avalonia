@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
 using AsyncImageLoader.Loaders;
@@ -7,6 +6,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using System.Collections.Concurrent;
+using AsyncImageLoader.Memory;
+using AsyncImageLoader.Memory.Services;
 using Avalonia.Logging;
 
 namespace AsyncImageLoader;
@@ -25,60 +26,79 @@ public static class ImageLoader {
         SourceProperty.Changed.AddClassHandler<Image>(OnSourceChanged);
         Logger = Avalonia.Logging.Logger.TryGet(LogEventLevel.Error, AsyncImageLoaderLogArea);
     }
-
+    
     public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
+    
+    public static BitmapCacheCoordinator BitmapCacheEvictionManager { get; set; } = 
+        new (new VisibilityTimeoutPolicy(TimeSpan.FromSeconds(20)));
 
     private static readonly ConcurrentDictionary<Image, CancellationTokenSource> PendingOperations = new();
 
-    private static async void OnSourceChanged(Image sender, AvaloniaPropertyChangedEventArgs args) {
+    private static async void OnSourceChanged(Image sender, AvaloniaPropertyChangedEventArgs args)
+    {
         var url = args.GetNewValue<string?>();
 
-        // Cancel/Add new pending operation
         var cts = PendingOperations.AddOrUpdate(sender, new CancellationTokenSource(),
             (x, y) => {
                 y.Cancel();
+                y.Dispose();
                 return new CancellationTokenSource();
             });
 
-        if (string.IsNullOrWhiteSpace(url)) {
-            ((ICollection<KeyValuePair<Image, CancellationTokenSource>>)PendingOperations).Remove(
-                new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            if (PendingOperations.TryRemove(sender, out var removedCts))
+                removedCts.Dispose();
+
+            if (sender.Source is Bitmap oldBmp)
+                oldBmp.Dispose();
+
             sender.Source = null;
             return;
         }
 
         SetIsLoading(sender, true);
 
-        var bitmap = await Task.Run(async () => {
-            try {
-                // A small delay allows to cancel early if the image goes out of screen too fast (eg. scrolling)
-                // The Bitmap constructor is expensive and cannot be cancelled
-                await Task.Delay(10, cts.Token);
+        Bitmap? bitmap = null;
 
-                if (AsyncImageLoader is IAdvancedAsyncImageLoader advancedLoader) {
-                    return await advancedLoader.ProvideImageAsync(url, TopLevel.GetTopLevel(sender)?.StorageProvider);
-                }
-
-                return await AsyncImageLoader.ProvideImageAsync(url);
+        try {
+            if (AsyncImageLoader is ICoordinatedImageLoader coordinatedImageLoader) {
+                var entry = await coordinatedImageLoader.CoordinatorProvideImageAsync(url);
+                
+                if(entry != null)
+                    entry.Acquire();
+                
+                bitmap = entry?.Bitmap;
             }
-            catch (TaskCanceledException) {
-                return null;
-            }
-            catch (Exception e) {
-                Logger?.Log(LogEventLevel.Error, "ImageLoader image resolution failed: {0}", e);
+            else if (AsyncImageLoader is IAdvancedAsyncImageLoader advancedLoader)
+                bitmap = await advancedLoader.ProvideImageAsync(url, TopLevel.GetTopLevel(sender)?.StorageProvider);
+            else
+                bitmap = await AsyncImageLoader.ProvideImageAsync(url);
+        }
+        catch (TaskCanceledException) { }
+        catch (Exception e)
+        {
+            Logger?.Log(LogEventLevel.Error, "ImageLoader image resolution failed: {0}", e);
+        }
 
-                return null;
-            }
-        });
+        if (!cts.Token.IsCancellationRequested && bitmap != null)
+        {
+            if (sender.Source is Bitmap oldBmp)
+                oldBmp.Dispose();
 
-        if (bitmap != null && !cts.Token.IsCancellationRequested)
-            sender.Source = bitmap!;
+            sender.Source = bitmap;
+        }
+        else
+        {
+            bitmap?.Dispose();
+        }
 
-        // "It is not guaranteed to be thread safe by ICollection, but ConcurrentDictionary's implementation is. Additionally, we recently exposed this API for .NET 5 as a public ConcurrentDictionary.TryRemove"
-        ((ICollection<KeyValuePair<Image, CancellationTokenSource>>)PendingOperations).Remove(
-            new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
+        if (PendingOperations.TryRemove(sender, out var removedCtsFinal))
+            removedCtsFinal.Dispose();
+
         SetIsLoading(sender, false);
     }
+
 
     public static string? GetSource(Image element) {
         return element.GetValue(SourceProperty);
