@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform.Storage;
 
 namespace AsyncImageLoader.Loaders;
 
@@ -23,6 +24,14 @@ public class RamCachedWebImageLoader : BaseWebImageLoader {
     /// <inheritdoc />
     public override async Task<Bitmap?> ProvideImageAsync(string url) {
         var bitmap = await _memoryCache.GetOrAdd(url, LoadAsync).ConfigureAwait(false);
+        // If load failed - remove from cache and return
+        // Next load attempt will try to load image again
+        if (bitmap == null) _memoryCache.TryRemove(url, out _);
+        return bitmap;
+    }
+
+    public override async Task<Bitmap?> ProvideImageAsync(string url, IStorageProvider? storageProvider = null) {
+        var bitmap = await _memoryCache.GetOrAdd(url, x => LoadAsync(x, storageProvider)).ConfigureAwait(false);
         // If load failed - remove from cache and return
         // Next load attempt will try to load image again
         if (bitmap == null) _memoryCache.TryRemove(url, out _);

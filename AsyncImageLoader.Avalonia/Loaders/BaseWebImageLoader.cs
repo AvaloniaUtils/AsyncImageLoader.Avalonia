@@ -50,7 +50,7 @@ public class BaseWebImageLoader : IAsyncImageLoader, IAdvancedAsyncImageLoader {
     }
 
     /// <inheritdoc />
-    public async Task<Bitmap?> ProvideImageAsync(string url, IStorageProvider? storageProvider = null) {
+    public virtual async Task<Bitmap?> ProvideImageAsync(string url, IStorageProvider? storageProvider = null) {
         return await LoadAsync(url, storageProvider).ConfigureAwait(false);
     }
 
