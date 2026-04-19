@@ -1,7 +1,7 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:controls="clr-namespace:AsyncImageLoader.Avalonia.Demo.Controls">
-  <Design.PreviewWith>
+  <!-- <Design.PreviewWith>
     <Border Width="400"
             Height="150">
       <controls:HamburgerMenu>
@@ -18,7 +18,7 @@
         <TabItem Header="Item2" />
       </controls:HamburgerMenu>
     </Border>
-  </Design.PreviewWith>
+  </Design.PreviewWith> -->
 
   <x:Double x:Key="PaneCompactWidth">40</x:Double>
   <x:Double x:Key="PaneExpandWidth">220</x:Double>
@@ -188,7 +188,7 @@
             </SplitView.Pane>
             <SplitView.Content>
               <DockPanel>
-                <Border Height="{StaticResource HeaderHeight}" DockPanel.Dock="Top">
+                <!-- <Border Height="{StaticResource HeaderHeight}" DockPanel.Dock="Top">
                   <TextBlock x:Name="HeaderHolder"
                              VerticalAlignment="Center"
                              Classes="h1"
@@ -202,7 +202,7 @@
                       </Transitions>
                     </TextBlock.Transitions>
                   </TextBlock>
-                </Border>
+                </Border> -->
                 <Border x:Name="BackgroundBorder">
                   <Border.Transitions>
                     <Transitions>
@@ -252,10 +252,10 @@
       <Setter Property="PaneBackground" Value="{TemplateBinding PaneBackground}" />
     </Style>
     <Style Selector="^ /template/ SplitView[DisplayMode=Overlay]">
-      <Setter Property="Background" Value="{Binding $parent[TabControl].ContentBackground}" />
+      <Setter Property="Background" Value="{Binding $parent[controls:HamburgerMenu].ContentBackground}" />
     </Style>
     <Style Selector="^ /template/ SplitView[DisplayMode=Inline] Border#BackgroundBorder">
-      <Setter Property="Background" Value="{Binding $parent[TabControl].ContentBackground}" />
+      <Setter Property="Background" Value="{Binding $parent[controls:HamburgerMenu].ContentBackground}" />
       <Setter Property="BoxShadow" Value="{StaticResource NavigationContentShadow}" />
     </Style>
     <Style Selector="^ /template/ SplitView[DisplayMode=Inline][IsPaneOpen=True] Border#BackgroundBorder">

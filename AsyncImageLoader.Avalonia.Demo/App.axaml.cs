@@ -16,7 +16,7 @@ public class App : Application {
             desktop.MainWindow = new MainWindow {
                 DataContext = new MainWindowViewModel(),
             };
-            desktop.MainWindow.AttachDevTools();
+            this.AttachDeveloperTools();
         }
 
         base.OnFrameworkInitializationCompleted();

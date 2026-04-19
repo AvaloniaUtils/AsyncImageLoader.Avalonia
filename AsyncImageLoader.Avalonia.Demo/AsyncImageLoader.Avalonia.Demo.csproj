@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <IsPackable>false</IsPackable>
 
-    <AvaloniaVersion>11.3.2</AvaloniaVersion>
+    <AvaloniaVersion>12.0.1</AvaloniaVersion>
   </PropertyGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets/avalonia-logo.ico" />
@@ -13,8 +13,8 @@
   <ItemGroup>
     <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
-    <PackageReference Include="Avalonia.Diagnostics" />
-    <PackageReference Include="Avalonia.ReactiveUI" />
+    <PackageReference Include="AvaloniaUI.DiagnosticsSupport" />
+    <PackageReference Include="ReactiveUI.Avalonia" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AsyncImageLoader.Avalonia\AsyncImageLoader.Avalonia.csproj" />
