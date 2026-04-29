@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
@@ -39,6 +40,10 @@ public class RamCachedWebImageLoader : BaseWebImageLoader {
     }
 
     public void ClearRamCache() {
-        _memoryCache.Clear();
+        foreach (var key in _memoryCache.Keys.ToArray()) {
+            if (!_memoryCache.TryGetValue(key, out var bitmap) || !bitmap.IsCompleted) continue;
+            if (!_memoryCache.TryRemove(key, out bitmap) || !bitmap.IsCompletedSuccessfully) continue;
+            bitmap.Result?.Dispose();
+        }
     }
 }
