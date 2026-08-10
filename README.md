@@ -76,3 +76,16 @@ There are several loaders available out of the box:
   If you are using DiskCachedWebImageLoader on a non-PC platforms (mobile/wasm/etc) make sure to specify correct path for storing files on this platform. Default most likely doesn't work there.
 
 `RamCachedWebImageLoader` are used by default.
+
+RAM retention can be configured when creating a loader. Expiration releases the loader's strong reference;
+if the bitmap is still used by the UI, it can be reused through a weak reference:
+
+```csharp
+ImageLoader.AsyncImageLoader = new RamCachedWebImageLoader(new RamCacheOptions {
+    AbsoluteExpiration = TimeSpan.FromMinutes(10),
+    SlidingExpiration = TimeSpan.FromMinutes(2)
+});
+```
+
+When both values are specified, the first expiration is used. Expiration never disposes bitmaps that have
+already been returned to controls.
