@@ -175,7 +175,7 @@ public class AdvancedImage : ContentControl {
         if (change.Property == SourceProperty)
             UpdateImage(change.GetNewValue<string>(), Loader);
         else if (change.Property == LoaderProperty && ShouldLoaderChangeTriggerUpdate)
-            UpdateImage(change.GetNewValue<string>(), Loader);
+            UpdateImage(Source, Loader);
         else if (change.Property == CurrentImageProperty)
             ClearSourceIfUserProvideImage();
         else if (change.Property == CornerRadiusProperty)
@@ -205,66 +205,56 @@ public class AdvancedImage : ContentControl {
         catch (ObjectDisposedException) {
         }
 
-        if (source is null && FallbackImage != null) {
-            CurrentImage =  FallbackImage;
-        }
+        _currentLease?.Dispose();
+        _currentLease = null;
+        CurrentImage = source is null ? FallbackImage : null;
 
-        if (source is null && CurrentImage is not ImageWrapper) {
+        if (source is null) {
             // User provided image himself
+            IsLoading = false;
             return;
         }
 
         IsLoading = true;
         CurrentImage = null;
 
-        var bitmap = await Task.Run(async () => {
+        IImageLease? bitmap = null;
+        try {
             try {
                 if (string.IsNullOrWhiteSpace(source))
-                    return (IImageLease?)null;
+                    return;
 
                 // A small delay allows to cancel early if the image goes out of screen too fast (eg. scrolling)
                 // The Bitmap constructor is expensive and cannot be cancelled
                 await Task.Delay(10, cancellationTokenSource.Token);
 
-                // Hack to support relative URI
-                // TODO: Refactor IAsyncImageLoader to support BaseUri 
-                try {
-                    var uri = new Uri(source, UriKind.RelativeOrAbsolute);
-                    if (AssetLoader.Exists(uri, _baseUri))
-                        return ImageLease.Owned(new Bitmap(AssetLoader.Open(uri, _baseUri)));
-                }
-                catch (Exception) {
-                    // ignored
-                }
-
                 loader ??= ImageLoader.AsyncImageLoader;
 
-                return await loader.LoadAsync(new ImageLoadRequest(
+                bitmap = await loader.LoadAsync(new ImageLoadRequest(
                     source,
                     _baseUri,
                     TopLevel.GetTopLevel(this)?.StorageProvider),
                     cancellationTokenSource.Token);
             }
             catch (TaskCanceledException) {
-                return null;
             }
             catch (Exception e) {
                 _logger?.Log(this, "AdvancedImage image resolution failed: {0}", e);
 
-                return null;
             }
-            finally {
-                cancellationTokenSource.Dispose();
+        }
+        finally {
+            if (!cancellationTokenSource.IsCancellationRequested) {
+                _currentLease = bitmap;
+                CurrentImage = bitmap is null ? null : new ImageWrapper(bitmap.Image);
             }
-        }, CancellationToken.None);
+            else {
+                bitmap?.Dispose();
+            }
 
-        if (cancellationTokenSource.IsCancellationRequested)
-            return;
-
-        _currentLease?.Dispose();
-        _currentLease = bitmap;
-        CurrentImage = bitmap is null ? null : new ImageWrapper(bitmap.Image);
-        IsLoading = false;
+            IsLoading = false;
+            cancellationTokenSource.Dispose();
+        }
     }
 
     private void UpdateCornerRadius(CornerRadius radius) {

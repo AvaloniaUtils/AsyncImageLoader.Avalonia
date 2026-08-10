@@ -32,12 +32,14 @@ public static class ImageBrushLoader {
                 return new PendingOperation();
             });
         SetIsLoading(imageBrush, true);
+        imageBrush.Source = null;
 
         Bitmap? bitmap = null;
         try {
-            if (!string.IsNullOrWhiteSpace(newValue))
+            if (!string.IsNullOrWhiteSpace(newValue)) {
                 operation.Lease = await AsyncImageLoader.LoadAsync(new ImageLoadRequest(newValue!), operation.Cancellation.Token);
                 bitmap = operation.Lease?.Image as Bitmap;
+            }
 
             if (bitmap == null && GetFallbackImage(imageBrush) is Bitmap fallback)
                 bitmap = fallback;
@@ -46,11 +48,13 @@ public static class ImageBrushLoader {
             Logger?.Log("ImageBrushLoader", "ImageBrushLoader image resolution failed: {0}", e);
         }
 
-        if (GetSource(imageBrush) != newValue) return;
-        imageBrush.Source = bitmap;
-
         if (PendingOperations.TryRemove(new KeyValuePair<ImageBrush, PendingOperation>(imageBrush, operation))) {
+            if (GetSource(imageBrush) == newValue) {
+                imageBrush.Source = bitmap;
+            }
+
             SetIsLoading(imageBrush, false);
+            operation.DisposeCancellation();
         }
     }
 
@@ -108,8 +112,12 @@ public static class ImageBrushLoader {
 
         public void Dispose() {
             Cancellation.Cancel();
-            Cancellation.Dispose();
             Lease?.Dispose();
+            Cancellation.Dispose();
+        }
+
+        public void DisposeCancellation() {
+            Cancellation.Dispose();
         }
     }
 }

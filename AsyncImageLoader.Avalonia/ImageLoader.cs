@@ -44,44 +44,48 @@ public static class ImageLoader {
 
         if (string.IsNullOrWhiteSpace(url)) {
             PendingOperations.TryRemove(new KeyValuePair<Image, PendingOperation>(sender, operation));
+            operation.Dispose();
             sender.Source = null;
+            SetIsLoading(sender, false);
             return;
         }
 
         SetIsLoading(sender, true);
+        sender.Source = null;
 
-        var bitmap = await Task.Run(async () => {
+        IImageLease? lease = null;
+        try {
             try {
-                // A small delay allows to cancel early if the image goes out of screen too fast (eg. scrolling)
-                // The Bitmap constructor is expensive and cannot be cancelled
                 await Task.Delay(10, cts.Token);
 
-                return await AsyncImageLoader.LoadAsync(new ImageLoadRequest(
+                lease = await AsyncImageLoader.LoadAsync(new ImageLoadRequest(
                     url,
                     storageProvider: TopLevel.GetTopLevel(sender)?.StorageProvider),
                     cts.Token);
             }
             catch (TaskCanceledException) {
-                return null;
             }
             catch (Exception e) {
                 Logger?.Log(LogEventLevel.Error, "ImageLoader image resolution failed: {0}", e);
-
-                return null;
             }
-        });
-
-        if (bitmap != null && !cts.Token.IsCancellationRequested) {
-            sender.Source = bitmap.Image as Bitmap;
-            operation.Lease = bitmap;
         }
-        else {
-            bitmap?.Dispose();
-        }
+        finally {
+            if (PendingOperations.TryRemove(new KeyValuePair<Image, PendingOperation>(sender, operation))) {
+                if (lease is not null && !cts.IsCancellationRequested) {
+                    operation.Lease = lease;
+                    sender.Source = lease.Image as Bitmap;
+                }
+                else {
+                    lease?.Dispose();
+                }
 
-        // "It is not guaranteed to be thread safe by ICollection, but ConcurrentDictionary's implementation is. Additionally, we recently exposed this API for .NET 5 as a public ConcurrentDictionary.TryRemove"
-        if (PendingOperations.TryRemove(new KeyValuePair<Image, PendingOperation>(sender, operation)))
-            SetIsLoading(sender, false);
+                operation.DisposeCancellation();
+                SetIsLoading(sender, false);
+            }
+            else {
+                lease?.Dispose();
+            }
+        }
     }
 
     public static string? GetSource(Image element) {
@@ -106,8 +110,12 @@ public static class ImageLoader {
 
         public void Dispose() {
             Cancellation.Cancel();
-            Cancellation.Dispose();
             Lease?.Dispose();
+            Cancellation.Dispose();
+        }
+
+        public void DisposeCancellation() {
+            Cancellation.Dispose();
         }
     }
 }
