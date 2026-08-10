@@ -42,7 +42,7 @@ public class HamburgerMenu : TabControl {
         base.OnPropertyChanged(change);
 
         if (change.Property == BoundsProperty && _splitView is not null) {
-            EnsureSplitViewMode((Rect)change.OldValue, (Rect)change.NewValue);
+            EnsureSplitViewMode((Rect)change.OldValue!, (Rect)change.NewValue!);
         }
     }
 

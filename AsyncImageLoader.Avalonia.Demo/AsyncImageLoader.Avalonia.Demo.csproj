@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <IsPackable>false</IsPackable>
 
-    <AvaloniaVersion>12.0.1</AvaloniaVersion>
+    <AvaloniaVersion>12.1.1</AvaloniaVersion>
   </PropertyGroup>
   <ItemGroup>
     <AvaloniaResource Include="Assets/avalonia-logo.ico" />
