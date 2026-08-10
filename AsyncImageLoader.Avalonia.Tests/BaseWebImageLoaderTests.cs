@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using AsyncImageLoader.Loaders;
+using AsyncImageLoader.Core;
 using AwesomeAssertions;
 using Avalonia.Media.Imaging;
 using Xunit;
@@ -21,12 +22,12 @@ public sealed class BaseWebImageLoaderTests {
         }));
         using var loader = new BaseWebImageLoader(client, false);
 
-        var bitmap = await loader.ProvideImageAsync("https://example.test/image.png");
+        using var lease = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
+        var bitmap = lease?.Image as Bitmap;
 
         bitmap.Should().NotBeNull();
         bitmap!.Size.Width.Should().Be(1);
         bitmap.Size.Height.Should().Be(1);
-        bitmap.Dispose();
     }
 
     [Fact]
@@ -35,7 +36,8 @@ public sealed class BaseWebImageLoaderTests {
             TestHttpMessageHandler.CreateResponse(Array.Empty<byte>(), HttpStatusCode.NotFound)));
         using var loader = new BaseWebImageLoader(client, false);
 
-        var bitmap = await loader.ProvideImageAsync("https://example.test/missing.png");
+        using var lease = await loader.LoadAsync(new ImageLoadRequest("https://example.test/missing.png"));
+        var bitmap = lease?.Image;
 
         bitmap.Should().BeNull();
     }

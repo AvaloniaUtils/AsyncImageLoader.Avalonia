@@ -1,14 +1,18 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
-using Avalonia.Media.Imaging;
+using AsyncImageLoader.Core;
 
 namespace AsyncImageLoader;
 
+/// <summary>
+/// Public boundary for image loading implementations.
+/// </summary>
 public interface IAsyncImageLoader : IDisposable {
     /// <summary>
-    ///     Loads image
+    /// Loads an image and returns a lease owned by the caller.
     /// </summary>
-    /// <param name="url">Target url</param>
-    /// <returns>Bitmap</returns>
-    public Task<Bitmap?> ProvideImageAsync(string url);
+    Task<IImageLease?> LoadAsync(
+        ImageLoadRequest request,
+        CancellationToken cancellationToken = default);
 }

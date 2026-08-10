@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncImageLoader.Core;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Logging;
@@ -82,6 +83,7 @@ public class AdvancedImage : ContentControl {
 
     private CancellationTokenSource? _updateCancellationToken;
     private readonly ParametrizedLogger? _logger;
+    private IImageLease? _currentLease;
 
     static AdvancedImage() {
         AffectsRender<AdvancedImage>(CurrentImageProperty, StretchProperty, StretchDirectionProperty,
@@ -218,7 +220,7 @@ public class AdvancedImage : ContentControl {
         var bitmap = await Task.Run(async () => {
             try {
                 if (string.IsNullOrWhiteSpace(source))
-                    return null;
+                    return (IImageLease?)null;
 
                 // A small delay allows to cancel early if the image goes out of screen too fast (eg. scrolling)
                 // The Bitmap constructor is expensive and cannot be cancelled
@@ -229,7 +231,7 @@ public class AdvancedImage : ContentControl {
                 try {
                     var uri = new Uri(source, UriKind.RelativeOrAbsolute);
                     if (AssetLoader.Exists(uri, _baseUri))
-                        return new Bitmap(AssetLoader.Open(uri, _baseUri));
+                        return ImageLease.Owned(new Bitmap(AssetLoader.Open(uri, _baseUri)));
                 }
                 catch (Exception) {
                     // ignored
@@ -237,11 +239,11 @@ public class AdvancedImage : ContentControl {
 
                 loader ??= ImageLoader.AsyncImageLoader;
 
-                if (loader is IAdvancedAsyncImageLoader advancedLoader) {
-                    return await advancedLoader.ProvideImageAsync(source, TopLevel.GetTopLevel(this)?.StorageProvider);
-                }
-
-                return await loader.ProvideImageAsync(source);
+                return await loader.LoadAsync(new ImageLoadRequest(
+                    source,
+                    _baseUri,
+                    TopLevel.GetTopLevel(this)?.StorageProvider),
+                    cancellationTokenSource.Token);
             }
             catch (TaskCanceledException) {
                 return null;
@@ -259,7 +261,9 @@ public class AdvancedImage : ContentControl {
         if (cancellationTokenSource.IsCancellationRequested)
             return;
 
-        CurrentImage = bitmap is null ? null : new ImageWrapper(bitmap);
+        _currentLease?.Dispose();
+        _currentLease = bitmap;
+        CurrentImage = bitmap is null ? null : new ImageWrapper(bitmap.Image);
         IsLoading = false;
     }
 

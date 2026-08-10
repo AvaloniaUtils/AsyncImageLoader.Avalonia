@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncImageLoader.Loaders;
+using AsyncImageLoader.Core;
 using Avalonia;
 using Avalonia.Media.Imaging;
 using Avalonia.Headless;
@@ -122,24 +123,57 @@ public sealed class RamCachedWebImageLoaderTests {
         loader.Should().NotBeNull();
     }
 
-    private sealed class TestLoader : RamCachedWebImageLoader {
+    private sealed class TestLoader : global::AsyncImageLoader.IAsyncImageLoader {
         private static readonly byte[] Png = Convert.FromBase64String(
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
 
-        public TestLoader(RamCacheOptions? options = null) : base(options) { }
+        private readonly MemoryImageCache _cache;
+        private readonly System.Collections.Generic.List<IImageLease> _leases = new();
+
+        public TestLoader(RamCacheOptions? options = null) {
+            _cache = new MemoryImageCache(new MemoryImageCacheOptions {
+                AbsoluteExpiration = options?.AbsoluteExpiration,
+                SlidingExpiration = options?.SlidingExpiration
+            });
+        }
 
         private int _loadCount;
 
         public int LoadCount => _loadCount;
         public bool ReturnNull { get; set; }
 
-        protected override Task<Bitmap?> LoadAsync(string url) {
-            Interlocked.Increment(ref _loadCount);
-            if (ReturnNull)
-                return Task.FromResult<Bitmap?>(null);
+        public async Task<IImageLease?> LoadAsync(
+            ImageLoadRequest request,
+            CancellationToken cancellationToken = default) {
+            if (ReturnNull) {
+                Interlocked.Increment(ref _loadCount);
+                return null;
+            }
 
-            using var stream = new MemoryStream(Png);
-            return Task.FromResult<Bitmap?>(new Bitmap(stream));
+            return await _cache.GetOrCreateAsync(
+                request.Source,
+                _ => {
+                    Interlocked.Increment(ref _loadCount);
+                    using var stream = new MemoryStream(Png);
+                    return Task.FromResult<global::Avalonia.Media.IImage?>(new Bitmap(stream));
+                },
+                cancellationToken);
+        }
+
+        public async Task<Bitmap?> ProvideImageAsync(string url) {
+            var lease = await LoadAsync(new ImageLoadRequest(url));
+            if (lease is null)
+                return null;
+
+            _leases.Add(lease);
+            return lease.Image as Bitmap;
+        }
+
+        public void Dispose() {
+            foreach (var lease in _leases)
+                lease.Dispose();
+            _leases.Clear();
+            _cache.Dispose();
         }
     }
 

@@ -1,8 +1,10 @@
 using System;
 using System.IO;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncImageLoader.Core;
+using AsyncImageLoader;
 using AwesomeAssertions;
 using Avalonia.Media;
 using Avalonia;
@@ -61,7 +63,21 @@ public sealed class CustomImageLoaderTests {
         bitmap.Dispose();
     }
 
-    private sealed class CustomLoader : IImageLoader {
+    [Fact]
+    public async Task BaseLoaderDoesNotRetainImagesBetweenRequests() {
+        using var client = new HttpClient(new TestHttpMessageHandler(_ =>
+            TestHttpMessageHandler.CreateResponse(Png)));
+        using var loader = new AsyncImageLoader.Loaders.BaseWebImageLoader(client, false);
+
+        using var first = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
+        using var second = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
+
+        first.Should().NotBeNull();
+        second.Should().NotBeNull();
+        first!.Image.Should().NotBeSameAs(second!.Image);
+    }
+
+    private sealed class CustomLoader : IAsyncImageLoader {
         public int Requests { get; private set; }
 
         public Task<IImageLease?> LoadAsync(

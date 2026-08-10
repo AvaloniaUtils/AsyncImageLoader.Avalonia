@@ -8,7 +8,7 @@ namespace AsyncImageLoader.Core;
 /// <summary>
 /// Composes source resolution, transport, decoding and image caches.
 /// </summary>
-public sealed class ImageLoaderPipeline : IImageLoader {
+public sealed class ImageLoaderPipeline : global::AsyncImageLoader.IAsyncImageLoader {
     private readonly IImageSourceResolver _sourceResolver;
     private readonly IImageTransport _transport;
     private readonly IBitmapDecoder _decoder;
@@ -61,6 +61,13 @@ public sealed class ImageLoaderPipeline : IImageLoader {
         _memoryCache.Dispose();
     }
 
+    /// <summary>
+    /// Clears unleased decoded images from the memory cache.
+    /// </summary>
+    public void ClearMemoryCache() {
+        _memoryCache.Clear();
+    }
+
     private async Task<Avalonia.Media.IImage?> LoadImageAsync(
         ImageLoadRequest request,
         CancellationToken cancellationToken) {
@@ -85,7 +92,16 @@ public sealed class ImageLoaderPipeline : IImageLoader {
                 return new ResolvedImageSource(cached);
         }
 
-        var responseStream = await _transport.GetAsync(request, cancellationToken).ConfigureAwait(false);
+        Stream? responseStream;
+        try {
+            responseStream = await _transport.GetAsync(request, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+            throw;
+        }
+        catch (Exception) {
+            return null;
+        }
         if (responseStream is null)
             return null;
 

@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Threading;
+using AsyncImageLoader.Core;
 using AsyncImageLoader.Loaders;
 using Avalonia;
 using Avalonia.Logging;
@@ -10,6 +14,7 @@ namespace AsyncImageLoader;
 public static class ImageBrushLoader {
     private static readonly ParametrizedLogger? Logger;
     public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
+    private static readonly ConcurrentDictionary<ImageBrush, PendingOperation> PendingOperations = new();
 
     static ImageBrushLoader() {
         SourceProperty.Changed.AddClassHandler<ImageBrush>(OnSourceChanged);
@@ -21,12 +26,18 @@ public static class ImageBrushLoader {
         if (oldValue == newValue)
             return;
 
+        var operation = PendingOperations.AddOrUpdate(imageBrush, new PendingOperation(),
+            (_, old) => {
+                old.Dispose();
+                return new PendingOperation();
+            });
         SetIsLoading(imageBrush, true);
 
         Bitmap? bitmap = null;
         try {
             if (!string.IsNullOrWhiteSpace(newValue))
-                bitmap = await AsyncImageLoader.ProvideImageAsync(newValue!);
+                operation.Lease = await AsyncImageLoader.LoadAsync(new ImageLoadRequest(newValue!), operation.Cancellation.Token);
+                bitmap = operation.Lease?.Image as Bitmap;
 
             if (bitmap == null && GetFallbackImage(imageBrush) is Bitmap fallback)
                 bitmap = fallback;
@@ -38,7 +49,9 @@ public static class ImageBrushLoader {
         if (GetSource(imageBrush) != newValue) return;
         imageBrush.Source = bitmap;
 
-        SetIsLoading(imageBrush, false);
+        if (PendingOperations.TryRemove(new KeyValuePair<ImageBrush, PendingOperation>(imageBrush, operation))) {
+            SetIsLoading(imageBrush, false);
+        }
     }
 
     public static readonly AttachedProperty<string?> SourceProperty =
@@ -87,5 +100,16 @@ public static class ImageBrushLoader {
 
     private static void SetIsLoading(ImageBrush element, bool value) {
         element.SetValue(IsLoadingProperty, value);
+    }
+
+    private sealed class PendingOperation : IDisposable {
+        public CancellationTokenSource Cancellation { get; } = new();
+        public IImageLease? Lease { get; set; }
+
+        public void Dispose() {
+            Cancellation.Cancel();
+            Cancellation.Dispose();
+            Lease?.Dispose();
+        }
     }
 }

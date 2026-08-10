@@ -1,71 +1,86 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net.Http;
-using System.Security.Cryptography;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-using Avalonia.Media.Imaging;
+using AsyncImageLoader.Core;
 
 namespace AsyncImageLoader.Loaders;
 
 /// <summary>
-///     Provides memory and disk cached way to asynchronously load images for <see cref="ImageLoader" />
-///     Can be used as base class if you want to create custom caching mechanism
+/// Provides image loading with RAM and disk byte caches.
 /// </summary>
-public class DiskCachedWebImageLoader : RamCachedWebImageLoader {
-    private readonly string _cacheFolder;
+public sealed class DiskCachedWebImageLoader : global::AsyncImageLoader.IAsyncImageLoader {
+    private readonly bool _disposeHttpClient;
+    private readonly HttpClient _httpClient;
+    private readonly ImageLoaderPipeline _pipeline;
 
-    public DiskCachedWebImageLoader(string cacheFolder = "Cache/Images/") {
-        _cacheFolder = cacheFolder;
+    /// <summary>
+    /// Initializes a disk-cached loader.
+    /// </summary>
+    public DiskCachedWebImageLoader(string cacheFolder = "Cache/Images/")
+        : this(new HttpClient(), true, null, cacheFolder, true) {
     }
 
+    /// <summary>
+    /// Initializes a disk-cached loader with RAM options.
+    /// </summary>
     public DiskCachedWebImageLoader(RamCacheOptions options, string cacheFolder = "Cache/Images/")
-        : base(options) {
-        _cacheFolder = cacheFolder;
+        : this(new HttpClient(), true, options, cacheFolder, true) {
     }
 
-    public DiskCachedWebImageLoader(HttpClient httpClient, bool disposeHttpClient,
+    /// <summary>
+    /// Initializes a disk-cached loader with a caller-provided HTTP client.
+    /// </summary>
+    public DiskCachedWebImageLoader(
+        HttpClient httpClient,
+        bool disposeHttpClient,
         string cacheFolder = "Cache/Images/")
-        : base(httpClient, disposeHttpClient) {
-        _cacheFolder = cacheFolder;
+        : this(httpClient, disposeHttpClient, null, cacheFolder, true) {
     }
 
-    public DiskCachedWebImageLoader(HttpClient httpClient, bool disposeHttpClient, RamCacheOptions options,
+    /// <summary>
+    /// Initializes a disk-cached loader with a client and RAM options.
+    /// </summary>
+    public DiskCachedWebImageLoader(
+        HttpClient httpClient,
+        bool disposeHttpClient,
+        RamCacheOptions options,
         string cacheFolder = "Cache/Images/")
-        : base(httpClient, disposeHttpClient, options) {
-        _cacheFolder = cacheFolder;
+        : this(httpClient, disposeHttpClient, (RamCacheOptions?)options, cacheFolder, true) {
+    }
+
+    private DiskCachedWebImageLoader(
+        HttpClient httpClient,
+        bool disposeHttpClient,
+        RamCacheOptions? options,
+        string cacheFolder,
+        bool initialize) {
+        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        if (string.IsNullOrWhiteSpace(cacheFolder))
+            throw new ArgumentException("Cache folder cannot be empty.", nameof(cacheFolder));
+
+        _disposeHttpClient = disposeHttpClient;
+        _pipeline = BaseWebImageLoader.CreatePipeline(
+            _httpClient,
+            new MemoryImageCache(new MemoryImageCacheOptions {
+                AbsoluteExpiration = options?.AbsoluteExpiration,
+                SlidingExpiration = options?.SlidingExpiration
+            }),
+            new DiskImageByteCache(cacheFolder));
     }
 
     /// <inheritdoc />
-    protected override Task<Bitmap?> LoadFromGlobalCache(string url) {
-        var path = Path.Combine(_cacheFolder, CreateMD5(url));
-
-        return File.Exists(path) ? Task.FromResult<Bitmap?>(new Bitmap(path)) : Task.FromResult<Bitmap?>(null);
+    public Task<IImageLease?> LoadAsync(
+        ImageLoadRequest request,
+        CancellationToken cancellationToken = default) {
+        return _pipeline.LoadAsync(request, cancellationToken);
     }
 
-#if NETSTANDARD2_1
-        protected override async Task SaveToGlobalCache(string url, byte[] imageBytes) {
-            var path = Path.Combine(_cacheFolder, CreateMD5(url));
-
-            Directory.CreateDirectory(_cacheFolder);
-            await File.WriteAllBytesAsync(path, imageBytes).ConfigureAwait(false);
-        }
-#else
-    protected override Task SaveToGlobalCache(string url, byte[] imageBytes) {
-        var path = Path.Combine(_cacheFolder, CreateMD5(url));
-        Directory.CreateDirectory(_cacheFolder);
-        File.WriteAllBytes(path, imageBytes);
-        return Task.CompletedTask;
-    }
-#endif
-
-    protected static string CreateMD5(string input) {
-        // Use input string to calculate MD5 hash
-        using var md5 = MD5.Create();
-        var inputBytes = Encoding.ASCII.GetBytes(input);
-        var hashBytes = md5.ComputeHash(inputBytes);
-
-        // Convert the byte array to hexadecimal string
-        return BitConverter.ToString(hashBytes).Replace("-", "");
+    /// <inheritdoc />
+    public void Dispose() {
+        _pipeline.Dispose();
+        if (_disposeHttpClient)
+            _httpClient.Dispose();
     }
 }
