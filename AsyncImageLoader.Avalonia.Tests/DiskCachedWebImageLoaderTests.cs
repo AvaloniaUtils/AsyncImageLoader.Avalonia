@@ -11,6 +11,7 @@ using Xunit;
 
 namespace AsyncImageLoader.Avalonia.Tests;
 
+#pragma warning disable CS0618 // Compatibility facade remains covered until removal.
 public sealed class DiskCachedWebImageLoaderTests {
     private static readonly byte[] Png = Convert.FromBase64String(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
@@ -40,3 +41,4 @@ public sealed class DiskCachedWebImageLoaderTests {
         }
     }
 }
+#pragma warning restore CS0618

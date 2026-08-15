@@ -2,10 +2,8 @@
 using System.Runtime.CompilerServices;
 using System.Threading;
 using AsyncImageLoader.Core;
-using AsyncImageLoader.Core;
 using AsyncImageLoader.Core.Leases;
 using AsyncImageLoader.Core.Pipeline;
-using AsyncImageLoader.Loaders;
 using Avalonia;
 using Avalonia.Logging;
 using Avalonia.Media;
@@ -15,7 +13,8 @@ namespace AsyncImageLoader;
 
 public static class ImageBrushLoader {
     private static readonly ParametrizedLogger? Logger;
-    public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
+    public static IAsyncImageLoader AsyncImageLoader { get; set; } =
+        ImageLoaderPipelineBuilder.RamCached().Build();
     private static readonly ConditionalWeakTable<ImageBrush, BrushState> States = new();
 
     static ImageBrushLoader() {

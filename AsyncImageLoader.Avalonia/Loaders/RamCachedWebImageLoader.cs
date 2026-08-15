@@ -12,6 +12,7 @@ namespace AsyncImageLoader.Loaders;
 /// <summary>
 /// Provides image loading with a lease-aware in-memory cache.
 /// </summary>
+[Obsolete("Use ImageLoaderPipelineBuilder.RamCached(...).Build() instead.")]
 public sealed class RamCachedWebImageLoader : IAsyncImageLoader {
     private readonly bool _disposeHttpClient;
     private readonly HttpClient _httpClient;

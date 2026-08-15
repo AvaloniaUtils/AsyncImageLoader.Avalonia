@@ -11,6 +11,7 @@ namespace AsyncImageLoader.Loaders;
 /// <summary>
 /// Provides uncached image loading using the composable default strategies.
 /// </summary>
+[Obsolete("Use ImageLoaderPipelineBuilder.Uncached().Build() instead.")]
 public sealed class BaseWebImageLoader : IAsyncImageLoader {
     private readonly bool _disposeHttpClient;
     private readonly HttpClient _httpClient;

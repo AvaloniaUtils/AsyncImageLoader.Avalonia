@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using AsyncImageLoader.Core;
 using AsyncImageLoader.Core.Leases;
 using AsyncImageLoader.Core.Pipeline;
-using AsyncImageLoader.Loaders;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Logging;
@@ -30,7 +29,8 @@ public static class ImageLoader {
         Logger = Avalonia.Logging.Logger.TryGet(LogEventLevel.Error, AsyncImageLoaderLogArea);
     }
 
-    public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
+    public static IAsyncImageLoader AsyncImageLoader { get; set; } =
+        ImageLoaderPipelineBuilder.RamCached().Build();
 
     private static async void OnSourceChanged(Image sender, AvaloniaPropertyChangedEventArgs args) {
         var source = args.GetNewValue<string?>();

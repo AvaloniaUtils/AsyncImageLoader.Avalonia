@@ -3,13 +3,12 @@ using System.Threading.Tasks;
 using AsyncImageLoader.Core;
 using AsyncImageLoader.Core.Leases;
 using AsyncImageLoader.Core.Pipeline;
-using AsyncImageLoader.Loaders;
 
 namespace AsyncImageLoader.Avalonia.Demo.Services;
 
 public sealed class LongLoader : IAsyncImageLoader {
     public static LongLoader Instance { get; } = new();
-    private readonly BaseWebImageLoader _inner = new();
+    private readonly ImageLoaderPipeline _inner = ImageLoaderPipelineBuilder.Uncached().Build();
 
     public async Task<IImageLease?> LoadAsync(ImageLoadRequest request, CancellationToken cancellationToken = default) {
         await Task.Delay(1000);

@@ -12,6 +12,7 @@ namespace AsyncImageLoader.Loaders;
 /// <summary>
 /// Provides image loading with RAM and disk byte caches.
 /// </summary>
+[Obsolete("Use ImageLoaderPipelineBuilder.DiskCached(...).Build() instead.")]
 public sealed class DiskCachedWebImageLoader : IAsyncImageLoader {
     private readonly bool _disposeHttpClient;
     private readonly HttpClient _httpClient;
