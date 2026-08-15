@@ -3,13 +3,13 @@ name: Build and publish
 on:
   push:
     branches:
-      - master
-      - main
-      - release/**
+      - '**'
     paths-ignore:
-      - Material.Avalonia.Demo*/**
+      - AsyncImageLoader.Avalonia.Demo*/**
+      - AsyncImageLoader.Avalonia.Tests*/**
     tags:
       - v**
+  pull_request:
 
 permissions:
   id-token: write
