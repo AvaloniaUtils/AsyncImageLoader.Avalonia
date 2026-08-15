@@ -26,7 +26,9 @@ public sealed class BaseWebImageLoader : IAsyncImageLoader {
     public BaseWebImageLoader(HttpClient httpClient, bool disposeHttpClient) {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _disposeHttpClient = disposeHttpClient;
-        _pipeline = CreatePipeline(httpClient, new TransientImageCache());
+        _pipeline = ImageLoaderPipelineBuilder.Uncached()
+            .UseHttpClient(httpClient)
+            .Build();
     }
 
     /// <inheritdoc />
@@ -41,21 +43,5 @@ public sealed class BaseWebImageLoader : IAsyncImageLoader {
         _pipeline.Dispose();
         if (_disposeHttpClient)
             _httpClient.Dispose();
-    }
-
-    internal static ImageLoaderPipeline CreatePipeline(
-        HttpClient httpClient,
-        IImageMemoryCache memoryCache,
-        IImageByteCache? byteCache = null) {
-        var resolver = new CompositeImageSourceResolver(
-            new FileImageSourceResolver(),
-            new StorageImageSourceResolver(),
-            new AvaloniaAssetSourceResolver());
-        return new ImageLoaderPipeline(
-            resolver,
-            new HttpImageTransport(httpClient),
-            new BitmapDecoder(),
-            memoryCache,
-            byteCache);
     }
 }

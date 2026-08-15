@@ -61,13 +61,14 @@ public sealed class DiskCachedWebImageLoader : global::AsyncImageLoader.IAsyncIm
             throw new ArgumentException("Cache folder cannot be empty.", nameof(cacheFolder));
 
         _disposeHttpClient = disposeHttpClient;
-        _pipeline = BaseWebImageLoader.CreatePipeline(
-            _httpClient,
-            new MemoryImageCache(new MemoryImageCacheOptions {
+        _pipeline = ImageLoaderPipelineBuilder.DiskCached(
+            cacheFolder,
+            new MemoryImageCacheOptions {
                 AbsoluteExpiration = options?.AbsoluteExpiration,
                 SlidingExpiration = options?.SlidingExpiration
-            }),
-            new DiskImageByteCache(cacheFolder));
+            })
+            .UseHttpClient(_httpClient)
+            .Build();
     }
 
     /// <inheritdoc />

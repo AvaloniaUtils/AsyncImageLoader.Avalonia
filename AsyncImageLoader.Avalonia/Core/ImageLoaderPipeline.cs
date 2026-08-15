@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,6 +15,7 @@ public sealed class ImageLoaderPipeline : global::AsyncImageLoader.IAsyncImageLo
     private readonly IBitmapDecoder _decoder;
     private readonly IImageMemoryCache _memoryCache;
     private readonly IImageByteCache? _byteCache;
+    private readonly IReadOnlyList<IDisposable> _ownedResources;
     private bool _disposed;
 
     /// <summary>
@@ -24,12 +26,23 @@ public sealed class ImageLoaderPipeline : global::AsyncImageLoader.IAsyncImageLo
         IImageTransport transport,
         IBitmapDecoder decoder,
         IImageMemoryCache memoryCache,
-        IImageByteCache? byteCache = null) {
+        IImageByteCache? byteCache = null)
+        : this(sourceResolver, transport, decoder, memoryCache, byteCache, Array.Empty<IDisposable>()) {
+    }
+
+    internal ImageLoaderPipeline(
+        IImageSourceResolver sourceResolver,
+        IImageTransport transport,
+        IBitmapDecoder decoder,
+        IImageMemoryCache memoryCache,
+        IImageByteCache? byteCache,
+        IReadOnlyList<IDisposable> ownedResources) {
         _sourceResolver = sourceResolver ?? throw new ArgumentNullException(nameof(sourceResolver));
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
         _decoder = decoder ?? throw new ArgumentNullException(nameof(decoder));
         _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
         _byteCache = byteCache;
+        _ownedResources = ownedResources ?? throw new ArgumentNullException(nameof(ownedResources));
     }
 
     /// <summary>
@@ -59,6 +72,8 @@ public sealed class ImageLoaderPipeline : global::AsyncImageLoader.IAsyncImageLo
 
         _disposed = true;
         _memoryCache.Dispose();
+        foreach (var resource in _ownedResources)
+            resource.Dispose();
     }
 
     /// <summary>
