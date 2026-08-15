@@ -66,25 +66,84 @@ If you need a brush you can use Avalonia's `ImageBrush` with `ImageBrushLoader.S
 </Border>
 ```
 
-## Loaders
-ImageLoader will use instance of [IImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/IAsyncImageLoader.cs) for serving your requests.  
-You can change the loader used by setting new one to the [ImageLoader.AsyncImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/ImageLoader.cs#L10) property. Do not forget to Dispose previous loader.  
-There are several loaders available out of the box: 
-- [BaseWebImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/Loaders/BaseCachedWebImageLoader.cs) - Provides non cached way to asynchronously load images without caching. Can be used as base class for custom loaders you dont want caching in any way.
-- [RamCachedWebImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/Loaders/RamCachedWebImageLoader.cs) - This is inheritor if BaseWebImageLoader with in memory images caching. Can be used as base class for custom loaders you want only inmemory caching.
-- [DiskCachedWebImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/Loaders/DiskCachedWebImageLoader.cs) - This is inheritor if RamCachedWebImageLoader with in memory caching and disk caching for downloaded from the internet images. Can be used as base class for custom loaders if you want disk caching out of the box.  
-  If you are using DiskCachedWebImageLoader on a non-PC platforms (mobile/wasm/etc) make sure to specify correct path for storing files on this platform. Default most likely doesn't work there.
+## Image loading pipeline
 
-`RamCachedWebImageLoader` are used by default.
-
-RAM retention can be configured when creating a loader. Expiration releases the loader's strong reference;
-if the bitmap is still used by the UI, it can be reused through a weak reference:
+`ImageLoaderPipeline` and `ImageLoaderPipelineBuilder` are the primary APIs for configuring image loading. The pipeline composes source resolution, external transport, encoded byte caching, bitmap decoding and decoded image retention. Start with the closest builder preset, then replace only the components your application needs to customize:
 
 ```csharp
-ImageLoader.AsyncImageLoader = new RamCachedWebImageLoader(new RamCacheOptions {
+using AsyncImageLoader.Core;
+
+var loader = ImageLoaderPipelineBuilder.RamCached(new MemoryImageCacheOptions {
     AbsoluteExpiration = TimeSpan.FromMinutes(10),
     SlidingExpiration = TimeSpan.FromMinutes(2)
-});
+})
+    .UseHttpClient(new HttpClient { Timeout = TimeSpan.FromSeconds(30) })
+    .UseDecoder(new MyBitmapDecoder())
+    .Build();
+
+ImageLoader.AsyncImageLoader = loader;
+```
+
+The available presets are:
+
+- `Uncached()` downloads and decodes each request without retaining the decoded image.
+- `RamCached(...)` shares decoded images and retains them in the lease-aware RAM cache.
+- `DiskCached(...)` adds a persistent encoded disk cache for HTTP and HTTPS sources.
+
+All presets use the same default source resolvers, HTTP transport and bitmap decoder. They are starting configurations, not separate extension hierarchies.
+
+Set the resulting pipeline globally through `ImageLoader.AsyncImageLoader` or `ImageBrushLoader.AsyncImageLoader`, or assign it to the `Loader` property of an individual `AdvancedImage`. Dispose the previous global loader when replacing it.
+
+### Pipeline components
+
+- `ImageLoadRequest` carries the source string and optional Avalonia context (`BaseUri` and `IStorageProvider`) through the pipeline.
+- `IImageSourceResolver` handles non-network sources. The default `CompositeImageSourceResolver` tries `FileImageSourceResolver`, `StorageImageSourceResolver` and `AvaloniaAssetSourceResolver` in order.
+- `IImageTransport` retrieves external encoded data. The default `HttpImageTransport` handles absolute HTTP and HTTPS sources using `HttpClient`.
+- `IImageByteCache` stores encoded image data before decoding. `DiskImageByteCache` persists HTTP responses under hashed keys and is enabled by the `DiskCached(...)` preset.
+- `IBitmapDecoder` converts an encoded stream into an Avalonia `Bitmap`. The default `BitmapDecoder` reads non-seekable streams asynchronously before constructing the bitmap.
+- `IImageMemoryCache` coordinates concurrent requests and returns independent consumer leases. `TransientImageCache` performs no retention; `MemoryImageCache` provides RAM retention with absolute and sliding expiration.
+- `IImageLease` represents one consumer's ownership of an image. UI integrations release their lease when a source is replaced or detached, while the memory cache controls how long its own reference is retained.
+- `ImageLoaderPipeline` orchestrates these components and implements `IAsyncImageLoader`.
+
+The builder methods replace individual components:
+
+- `UseSourceResolver(...)`
+- `UseTransport(...)`
+- `UseDecoder(...)`
+- `UseMemoryCache(...)`
+- `UseByteCache(...)`
+- `UseHttpClient(...)`
+
+The built pipeline owns and disposes its configured memory cache. A supplied `HttpClient` remains caller-owned unless `UseHttpClient(client, disposeHttpClient: true)` is used. A builder can build only one pipeline because ownership of its cache is transferred during `Build()`.
+
+### Compatibility loaders
+
+The original ready-made loaders remain available as compatibility and convenience facades:
+
+- [BaseWebImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/Loaders/BaseWebImageLoader.cs) corresponds to the `Uncached()` preset.
+- [RamCachedWebImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/Loaders/RamCachedWebImageLoader.cs) corresponds to the `RamCached(...)` preset and remains the default global loader.
+- [DiskCachedWebImageLoader](https://github.com/AvaloniaUtils/AsyncImageLoader.Avalonia/blob/master/AsyncImageLoader.Avalonia/Loaders/DiskCachedWebImageLoader.cs) corresponds to the `DiskCached(...)` preset.
+
+These types delegate to the same pipeline presets. They are useful for existing applications and simple configurations, but new customization should use `ImageLoaderPipelineBuilder` instead of inheriting from a loader. On mobile, WASM and other restricted platforms, provide a valid writable cache path before using disk caching.
+
+### Custom loaders
+
+You can implement every component of the pipeline individually.
+
+Or implement `IAsyncImageLoader` directly only when the complete built-in pipeline is not appropriate. `LoadAsync` receives an `ImageLoadRequest` and returns an `IImageLease`; such an implementation replaces source resolution, transport, decoding and caching rather than customizing one pipeline stage.
+
+Use `ImageLease.Owned`, `ImageLease.NonOwning` or `ImageLease.Create` to make ownership explicit when implementing a custom loader.
+
+### RAM retention
+
+RAM retention can be configured when creating a loader. Expiration releases the loader's strong reference;
+if the UI still uses the bitmap, it can be reused through a weak reference:
+
+```csharp
+ImageLoader.AsyncImageLoader = ImageLoaderPipelineBuilder.RamCached(new MemoryImageCacheOptions {
+    AbsoluteExpiration = TimeSpan.FromMinutes(10),
+    SlidingExpiration = TimeSpan.FromMinutes(2)
+}).Build();
 ```
 
 When both values are specified, the first expiration is used. Expiration never disposes bitmaps that have
