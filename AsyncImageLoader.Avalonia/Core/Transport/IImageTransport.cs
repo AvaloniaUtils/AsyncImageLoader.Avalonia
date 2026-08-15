@@ -1,8 +1,9 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncImageLoader.Core.Pipeline;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Transport;
 
 /// <summary>
 /// Retrieves image data from an external source.

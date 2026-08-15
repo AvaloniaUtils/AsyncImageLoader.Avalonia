@@ -1,9 +1,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncImageLoader.Core.Pipeline;
 using Avalonia.Platform;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Sources;
 
 /// <summary>
 /// Resolves Avalonia resources such as <c>avares:</c>, <c>resm:</c> and relative asset URIs.

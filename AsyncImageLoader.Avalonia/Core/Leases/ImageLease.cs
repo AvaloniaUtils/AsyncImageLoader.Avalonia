@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using Avalonia.Media;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Leases;
 
 /// <summary>
 /// Creates leases for custom image loader implementations.

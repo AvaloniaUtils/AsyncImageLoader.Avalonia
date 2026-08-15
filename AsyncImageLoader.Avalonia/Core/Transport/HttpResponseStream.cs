@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Transport;
 
 /// <summary>
 /// Owns an HTTP response for as long as its response stream is in use.

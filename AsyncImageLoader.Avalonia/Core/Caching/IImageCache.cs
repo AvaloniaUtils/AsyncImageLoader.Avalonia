@@ -1,7 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncImageLoader.Core.Leases;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Caching;
 
 /// <summary>
 /// Stores decoded images by request key.

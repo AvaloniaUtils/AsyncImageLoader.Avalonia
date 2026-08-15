@@ -1,8 +1,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncImageLoader.Core.Pipeline;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Sources;
 
 /// <summary>
 /// Resolves file and content URIs through an Avalonia storage provider.

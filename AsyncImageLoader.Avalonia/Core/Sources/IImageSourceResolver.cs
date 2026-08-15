@@ -1,7 +1,8 @@
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncImageLoader.Core.Pipeline;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Sources;
 
 /// <summary>
 /// Resolves a request from a non-network image source.

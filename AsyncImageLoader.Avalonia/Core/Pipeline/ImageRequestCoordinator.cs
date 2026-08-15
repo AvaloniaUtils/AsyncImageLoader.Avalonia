@@ -1,7 +1,8 @@
 using System;
 using System.Threading;
+using AsyncImageLoader.Core.Leases;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Pipeline;
 
 internal sealed class ImageRequestCoordinator : IDisposable {
     private readonly object _gate = new();

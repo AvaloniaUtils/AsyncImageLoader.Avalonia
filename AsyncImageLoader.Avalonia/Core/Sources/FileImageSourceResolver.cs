@@ -2,8 +2,9 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncImageLoader.Core.Pipeline;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Sources;
 
 /// <summary>
 /// Resolves image sources that point to files on the local filesystem.

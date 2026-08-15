@@ -3,6 +3,8 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncImageLoader.Core;
+using AsyncImageLoader.Core.Pipeline;
+using AsyncImageLoader.Core.Sources;
 using AwesomeAssertions;
 using Xunit;
 

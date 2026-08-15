@@ -2,9 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncImageLoader.Core.Leases;
 using Avalonia.Media;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Caching;
 
 /// <summary>
 /// Caches decoded images and manages their consumer leases.

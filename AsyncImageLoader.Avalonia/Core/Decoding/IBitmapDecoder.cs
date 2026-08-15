@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Decoding;
 
 /// <summary>
 /// Creates a bitmap from resolved image data.

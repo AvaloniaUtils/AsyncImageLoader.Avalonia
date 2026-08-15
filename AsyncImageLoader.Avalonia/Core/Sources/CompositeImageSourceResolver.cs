@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncImageLoader.Core.Pipeline;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Sources;
 
 /// <summary>
 /// Tries source resolvers in the order supplied by the caller.

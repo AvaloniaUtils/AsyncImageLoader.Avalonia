@@ -1,7 +1,7 @@
 using System;
 using Avalonia.Platform.Storage;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Pipeline;
 
 /// <summary>
 /// Describes an image loading request and the context required to resolve it.

@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using AsyncImageLoader.Core.Caching;
+using AsyncImageLoader.Core.Decoding;
+using AsyncImageLoader.Core.Sources;
+using AsyncImageLoader.Core.Transport;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Pipeline;
 
 /// <summary>
 /// Builds an image loading pipeline from replaceable source, transport, decoder and cache strategies.

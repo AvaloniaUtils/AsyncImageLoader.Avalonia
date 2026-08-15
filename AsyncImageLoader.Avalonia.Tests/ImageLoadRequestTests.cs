@@ -1,5 +1,6 @@
 using System;
 using AsyncImageLoader.Core;
+using AsyncImageLoader.Core.Pipeline;
 using AwesomeAssertions;
 using Xunit;
 

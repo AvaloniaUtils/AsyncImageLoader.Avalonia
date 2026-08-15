@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Caching;
 
 /// <summary>
 /// Stores encoded image data in a directory on the local filesystem.

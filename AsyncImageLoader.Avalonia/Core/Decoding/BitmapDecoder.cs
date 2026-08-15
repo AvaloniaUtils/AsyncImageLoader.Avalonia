@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Decoding;
 
 /// <summary>
 /// Decodes Avalonia bitmaps from image streams.

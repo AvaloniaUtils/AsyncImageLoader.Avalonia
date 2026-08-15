@@ -1,9 +1,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncImageLoader.Core.Leases;
 using Avalonia.Media;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Caching;
 
 /// <summary>
 /// Provides shared ownership and caching for decoded images.

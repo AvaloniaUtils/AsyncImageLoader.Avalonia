@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncImageLoader.Core;
+using AsyncImageLoader.Core.Caching;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using AwesomeAssertions;

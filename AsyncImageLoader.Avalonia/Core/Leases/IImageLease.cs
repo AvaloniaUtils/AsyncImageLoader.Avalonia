@@ -1,7 +1,7 @@
 using System;
 using Avalonia.Media;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Leases;
 
 /// <summary>
 /// Owns one consumer reference to an image managed by a loader or cache.

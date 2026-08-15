@@ -1,6 +1,6 @@
 using System;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Caching;
 
 /// <summary>
 /// Configures the decoded image memory cache.

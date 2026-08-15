@@ -3,8 +3,9 @@ using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncImageLoader.Core.Pipeline;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Transport;
 
 /// <summary>
 /// Downloads image data over HTTP or HTTPS.

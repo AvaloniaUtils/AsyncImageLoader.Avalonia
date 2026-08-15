@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Sources;
 
 /// <summary>
 /// Represents image bytes and the stream ownership required by a decoder.

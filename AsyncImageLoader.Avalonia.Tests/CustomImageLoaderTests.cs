@@ -2,6 +2,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncImageLoader.Core;
+using AsyncImageLoader.Core.Leases;
+using AsyncImageLoader.Core.Pipeline;
 using Avalonia;
 using Avalonia.Media;
 using AwesomeAssertions;

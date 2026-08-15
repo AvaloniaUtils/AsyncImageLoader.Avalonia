@@ -2,6 +2,9 @@
 using System.Runtime.CompilerServices;
 using System.Threading;
 using AsyncImageLoader.Core;
+using AsyncImageLoader.Core;
+using AsyncImageLoader.Core.Leases;
+using AsyncImageLoader.Core.Pipeline;
 using AsyncImageLoader.Loaders;
 using Avalonia;
 using Avalonia.Logging;

@@ -3,9 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncImageLoader.Core.Caching;
+using AsyncImageLoader.Core.Decoding;
+using AsyncImageLoader.Core.Leases;
+using AsyncImageLoader.Core.Sources;
+using AsyncImageLoader.Core.Transport;
 using Avalonia.Media;
 
-namespace AsyncImageLoader.Core;
+namespace AsyncImageLoader.Core.Pipeline;
 
 /// <summary>
 /// Composes source resolution, transport, decoding and image caches.
