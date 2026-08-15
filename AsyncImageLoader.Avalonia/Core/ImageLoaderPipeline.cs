@@ -105,26 +105,25 @@ public sealed class ImageLoaderPipeline : global::AsyncImageLoader.IAsyncImageLo
         if (responseStream is null)
             return null;
 
-        if (_byteCache is null || !IsHttpSource(request.Source))
-            return new ResolvedImageSource(responseStream);
-
         var buffered = new MemoryStream();
         try {
             await responseStream.CopyToAsync(buffered, cancellationToken).ConfigureAwait(false);
             responseStream.Dispose();
             buffered.Position = 0;
 
-            try {
-                await _byteCache.SetAsync(CreateCacheKey(request), buffered, cancellationToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
-                throw;
-            }
-            catch (IOException) {
-                // Persistence is best effort; the downloaded image remains usable.
-            }
-            catch (UnauthorizedAccessException) {
-                // Persistence is best effort; the downloaded image remains usable.
+            if (_byteCache is not null && IsHttpSource(request.Source)) {
+                try {
+                    await _byteCache.SetAsync(CreateCacheKey(request), buffered, cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+                    throw;
+                }
+                catch (IOException) {
+                    // Persistence is best effort; the downloaded image remains usable.
+                }
+                catch (UnauthorizedAccessException) {
+                    // Persistence is best effort; the downloaded image remains usable.
+                }
             }
 
             buffered.Position = 0;
