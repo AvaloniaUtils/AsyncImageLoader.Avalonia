@@ -1,6 +1,4 @@
 using System;
-using System.IO;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncImageLoader.Core;
@@ -13,9 +11,6 @@ using Xunit;
 namespace AsyncImageLoader.Avalonia.Tests;
 
 public sealed class CustomImageLoaderTests {
-    private static readonly byte[] Png = Convert.FromBase64String(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
-
     [Fact]
     public async Task CustomLoaderCanIgnoreBuiltInPipeline() {
         using var loader = new CustomLoader();
@@ -61,20 +56,6 @@ public sealed class CustomImageLoaderTests {
 
         bitmap.Size.Width.Should().Be(1);
         bitmap.Dispose();
-    }
-
-    [Fact]
-    public async Task BaseLoaderDoesNotRetainImagesBetweenRequests() {
-        using var client = new HttpClient(new TestHttpMessageHandler(_ =>
-            TestHttpMessageHandler.CreateResponse(Png)));
-        using var loader = new AsyncImageLoader.Loaders.BaseWebImageLoader(client, false);
-
-        using var first = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
-        using var second = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
-
-        first.Should().NotBeNull();
-        second.Should().NotBeNull();
-        first!.Image.Should().NotBeSameAs(second!.Image);
     }
 
     private sealed class CustomLoader : IAsyncImageLoader {

@@ -42,4 +42,22 @@ public sealed class BaseWebImageLoaderTests {
         bitmap.Should().BeNull();
     }
 
+    [Fact]
+    public async Task DoesNotRetainImagesBetweenRequests() {
+        var requests = 0;
+        using var client = new HttpClient(new TestHttpMessageHandler(_ => {
+            requests++;
+            return TestHttpMessageHandler.CreateResponse(Png);
+        }));
+        using var loader = new BaseWebImageLoader(client, false);
+
+        using var first = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
+        using var second = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
+
+        first.Should().NotBeNull();
+        second.Should().NotBeNull();
+        first!.Image.Should().NotBeSameAs(second!.Image);
+        requests.Should().Be(2);
+    }
+
 }

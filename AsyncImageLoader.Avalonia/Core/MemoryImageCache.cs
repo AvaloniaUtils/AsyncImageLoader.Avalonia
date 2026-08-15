@@ -13,19 +13,25 @@ public sealed class MemoryImageCache : IImageMemoryCache {
     private readonly object _gate = new();
     private readonly Dictionary<string, Entry> _entries = new(StringComparer.Ordinal);
     private readonly MemoryImageCacheOptions _options;
-    private readonly Timer? _cleanupTimer;
+    private readonly TimeProvider _timeProvider;
+    private readonly ITimer? _cleanupTimer;
     private bool _disposed;
 
     /// <summary>
     /// Initializes a memory image cache.
     /// </summary>
-    public MemoryImageCache(MemoryImageCacheOptions? options = null) {
+    public MemoryImageCache(MemoryImageCacheOptions? options = null)
+        : this(options, TimeProvider.System) {
+    }
+
+    internal MemoryImageCache(MemoryImageCacheOptions? options, TimeProvider timeProvider) {
         _options = options ?? new MemoryImageCacheOptions();
         _options.Validate();
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
 
         if (_options.AbsoluteExpiration is not null || _options.SlidingExpiration is not null) {
             var period = GetCleanupPeriod();
-            _cleanupTimer = new Timer(CleanupExpiredEntries, null, period, period);
+            _cleanupTimer = _timeProvider.CreateTimer(CleanupExpiredEntries, null, period, period);
         }
     }
 
@@ -40,6 +46,7 @@ public sealed class MemoryImageCache : IImageMemoryCache {
 
         Entry entry;
         Task<IImage?> loadingTask;
+        var startLoading = false;
         lock (_gate) {
             ThrowIfDisposed();
 
@@ -63,44 +70,82 @@ public sealed class MemoryImageCache : IImageMemoryCache {
                 _entries.Add(key, entry);
             }
 
-            entry.LoadingTask ??= factory(cancellationToken);
+            if (entry.LoadingTask is null) {
+                entry.Completion = new TaskCompletionSource<IImage?>(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
+                entry.LoadingTask = entry.Completion.Task;
+                startLoading = true;
+            }
+
+            entry.WaiterCount++;
             loadingTask = entry.LoadingTask;
         }
 
+        if (startLoading)
+            _ = LoadEntryAsync(key, entry, factory);
+
         IImage? image;
         try {
-            image = await loadingTask.ConfigureAwait(false);
+            image = await loadingTask.WaitAsync(cancellationToken).ConfigureAwait(false);
         }
         catch {
             lock (_gate) {
-                if (_entries.TryGetValue(key, out var current) && ReferenceEquals(current, entry))
-                    _entries.Remove(key);
+                entry.WaiterCount--;
+                DisposeDetachedEntryIfUnused(entry);
             }
 
             throw;
         }
 
         lock (_gate) {
+            entry.WaiterCount--;
             if (_disposed) {
-                DisposeImage(image);
+                DisposeDetachedEntryIfUnused(entry);
                 return null;
             }
 
             if (image is null) {
-                RemoveEntryLocked(key, entry);
+                DetachEntryLocked(key, entry);
                 return null;
             }
 
-            if (entry.Image is null)
-                entry.Image = image;
-            else if (!ReferenceEquals(entry.Image, image))
-                DisposeImage(image);
-
-            entry.LoadingTask = null;
-            entry.StrongSince = DateTimeOffset.UtcNow;
             entry.LeaseCount++;
-            entry.LastAccess = entry.StrongSince;
-            return new MemoryImageLease(entry.Image, () => Release(key, entry));
+            return new MemoryImageLease(image, () => Release(key, entry));
+        }
+    }
+
+    private async Task LoadEntryAsync(
+        string key,
+        Entry entry,
+        Func<CancellationToken, Task<IImage?>> factory) {
+        var completion = entry.Completion!;
+        try {
+            var image = await factory(CancellationToken.None).ConfigureAwait(false);
+            lock (_gate) {
+                entry.LoadingTask = null;
+                entry.Completion = null;
+                entry.Image = image;
+                if (image is not null) {
+                    entry.StrongSince = _timeProvider.GetUtcNow();
+                    entry.LastAccess = entry.StrongSince;
+                }
+                else {
+                    DetachEntryLocked(key, entry);
+                }
+
+                DisposeDetachedEntryIfUnused(entry);
+            }
+
+            completion.TrySetResult(image);
+        }
+        catch (Exception e) {
+            lock (_gate) {
+                entry.LoadingTask = null;
+                entry.Completion = null;
+                DetachEntryLocked(key, entry);
+            }
+
+            completion.TrySetException(e);
         }
     }
 
@@ -133,7 +178,7 @@ public sealed class MemoryImageCache : IImageMemoryCache {
                 entry.LeaseCount--;
 
             if (entry.LeaseCount == 0 && (_disposed || entry.IsDetached || IsExpired(entry)))
-                DisposeDetachedEntry(entry);
+                DisposeDetachedEntryIfUnused(entry);
         }
     }
 
@@ -150,13 +195,13 @@ public sealed class MemoryImageCache : IImageMemoryCache {
     }
 
     private void Touch(Entry entry) {
-        var now = DateTimeOffset.UtcNow;
+        var now = _timeProvider.GetUtcNow();
         if (_options.SlidingExpiration is not null && !IsAbsoluteExpired(entry, now))
             entry.LastAccess = now;
     }
 
     private bool IsExpired(Entry entry) {
-        var now = DateTimeOffset.UtcNow;
+        var now = _timeProvider.GetUtcNow();
         return IsAbsoluteExpired(entry, now) ||
                _options.SlidingExpiration is { } sliding && now - entry.LastAccess >= sliding;
     }
@@ -177,8 +222,7 @@ public sealed class MemoryImageCache : IImageMemoryCache {
 
         _entries.Remove(key);
         entry.IsDetached = true;
-        if (entry.LeaseCount == 0 && entry.LoadingTask is null)
-            DisposeDetachedEntry(entry);
+        DisposeDetachedEntryIfUnused(entry);
     }
 
     private void DetachEntryLocked(string key, Entry entry) {
@@ -186,11 +230,13 @@ public sealed class MemoryImageCache : IImageMemoryCache {
             _entries.Remove(key);
 
         entry.IsDetached = true;
-        if (entry.LeaseCount == 0 && entry.LoadingTask is null)
-            DisposeDetachedEntry(entry);
+        DisposeDetachedEntryIfUnused(entry);
     }
 
-    private static void DisposeDetachedEntry(Entry entry) {
+    private static void DisposeDetachedEntryIfUnused(Entry entry) {
+        if (!entry.IsDetached || entry.LeaseCount != 0 || entry.WaiterCount != 0 || entry.LoadingTask is not null)
+            return;
+
         DisposeImage(entry.Image);
         entry.Image = null;
     }
@@ -207,6 +253,8 @@ public sealed class MemoryImageCache : IImageMemoryCache {
     private sealed class Entry {
         public IImage? Image;
         public Task<IImage?>? LoadingTask;
+        public TaskCompletionSource<IImage?>? Completion;
+        public int WaiterCount;
         public int LeaseCount;
         public DateTimeOffset StrongSince;
         public DateTimeOffset LastAccess;

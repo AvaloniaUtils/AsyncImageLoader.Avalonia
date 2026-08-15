@@ -77,6 +77,13 @@ public sealed class DiskCachedWebImageLoader : global::AsyncImageLoader.IAsyncIm
         return _pipeline.LoadAsync(request, cancellationToken);
     }
 
+    /// <summary>
+    /// Clears decoded images from the RAM cache while retaining persisted disk data.
+    /// </summary>
+    public void ClearRamCache() {
+        _pipeline.ClearMemoryCache();
+    }
+
     /// <inheritdoc />
     public void Dispose() {
         _pipeline.Dispose();

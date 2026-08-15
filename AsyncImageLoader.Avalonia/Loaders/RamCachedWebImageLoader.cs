@@ -40,10 +40,18 @@ public sealed class RamCachedWebImageLoader : global::AsyncImageLoader.IAsyncIma
     public RamCachedWebImageLoader(
         HttpClient httpClient,
         bool disposeHttpClient,
-        RamCacheOptions? options) {
+        RamCacheOptions? options)
+        : this(httpClient, disposeHttpClient, options, TimeProvider.System) {
+    }
+
+    internal RamCachedWebImageLoader(
+        HttpClient httpClient,
+        bool disposeHttpClient,
+        RamCacheOptions? options,
+        TimeProvider timeProvider) {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _disposeHttpClient = disposeHttpClient;
-        _pipeline = BaseWebImageLoader.CreatePipeline(_httpClient, CreateCache(options));
+        _pipeline = BaseWebImageLoader.CreatePipeline(_httpClient, CreateCache(options, timeProvider));
     }
 
     /// <inheritdoc />
@@ -69,10 +77,10 @@ public sealed class RamCachedWebImageLoader : global::AsyncImageLoader.IAsyncIma
             _httpClient.Dispose();
     }
 
-    private static IImageMemoryCache CreateCache(RamCacheOptions? options) {
+    private static IImageMemoryCache CreateCache(RamCacheOptions? options, TimeProvider? timeProvider = null) {
         return new MemoryImageCache(new MemoryImageCacheOptions {
             AbsoluteExpiration = options?.AbsoluteExpiration,
             SlidingExpiration = options?.SlidingExpiration
-        });
+        }, timeProvider ?? TimeProvider.System);
     }
 }

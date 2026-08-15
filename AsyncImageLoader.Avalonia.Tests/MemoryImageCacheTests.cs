@@ -32,14 +32,13 @@ public sealed class MemoryImageCacheTests {
     [Fact]
     public async Task ClearDoesNotDisposeAnImageWithAnActiveLease() {
         using var cache = new MemoryImageCache();
-        using var lease = await cache.GetOrCreateAsync("image", _ => CreateImageAsync());
+        var lease = await cache.GetOrCreateAsync("image", _ => CreateImageAsync());
         var bitmap = (Bitmap)lease!.Image;
 
         cache.Clear();
         bitmap.Size.Width.Should().Be(1);
 
         lease.Dispose();
-        cache.Clear();
         var action = () => bitmap.Size;
         action.Should().Throw<ObjectDisposedException>();
     }
@@ -107,7 +106,7 @@ public sealed class MemoryImageCacheTests {
     }
 
     [Fact]
-    public async Task FailedExceptionIsNotRetained() {
+    public async Task FaultedLoadIsNotRetained() {
         using var cache = new MemoryImageCache();
         var loads = 0;
 
@@ -122,7 +121,7 @@ public sealed class MemoryImageCacheTests {
     }
 
     [Fact]
-    public async Task ExceptionFromFactoryIsPropagatedAndEntryCanBeRetried() {
+    public async Task SynchronouslyThrownFactoryExceptionAllowsRetry() {
         using var cache = new MemoryImageCache();
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => cache.GetOrCreateAsync(
@@ -135,29 +134,29 @@ public sealed class MemoryImageCacheTests {
     }
 
     [Fact]
-    public async Task CancellationIsPassedToTheFactoryAndEntryCanBeRetried() {
+    public async Task CancellingOneWaiterDoesNotCancelSharedLoad() {
         using var cache = new MemoryImageCache();
         using var cancellation = new CancellationTokenSource();
-        var factoryObservedCancellation = new TaskCompletionSource<bool>(
+        var completion = new TaskCompletionSource<IImage?>(
             TaskCreationOptions.RunContinuationsAsynchronously);
+        var loads = 0;
 
-        var load = cache.GetOrCreateAsync("image", async token => {
-            try {
-                await Task.Delay(Timeout.InfiniteTimeSpan, token);
-                return await CreateImageAsync();
-            }
-            catch (OperationCanceledException) {
-                factoryObservedCancellation.SetResult(token.IsCancellationRequested);
-                throw;
-            }
+        var cancelledWaiter = cache.GetOrCreateAsync("image", _ => {
+            Interlocked.Increment(ref loads);
+            return completion.Task;
         }, cancellation.Token);
+        var activeWaiter = cache.GetOrCreateAsync("image", _ => {
+            Interlocked.Increment(ref loads);
+            return completion.Task;
+        });
 
         cancellation.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => load);
-        (await factoryObservedCancellation.Task).Should().BeTrue();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cancelledWaiter);
+        completion.SetResult(CreateBitmap());
+        using var lease = await activeWaiter;
 
-        using var retry = await cache.GetOrCreateAsync("image", _ => CreateImageAsync());
-        retry.Should().NotBeNull();
+        lease.Should().NotBeNull();
+        loads.Should().Be(1);
     }
 
     [Fact]
@@ -205,12 +204,13 @@ public sealed class MemoryImageCacheTests {
 
     [Fact]
     public async Task ExpiredImageRemainsSharedWhileItHasAnActiveLease() {
+        var timeProvider = new TestTimeProvider();
         using var cache = new MemoryImageCache(new MemoryImageCacheOptions {
             AbsoluteExpiration = TimeSpan.FromMilliseconds(100)
-        });
+        }, timeProvider);
         var loads = 0;
         using var first = await cache.GetOrCreateAsync("image", _ => CreateImageAsync(() => ++loads));
-        await Task.Delay(250);
+        timeProvider.Advance(TimeSpan.FromMilliseconds(250));
         using var second = await cache.GetOrCreateAsync("image", _ => CreateImageAsync(() => ++loads));
 
         second!.Image.Should().BeSameAs(first!.Image);
@@ -219,13 +219,14 @@ public sealed class MemoryImageCacheTests {
 
     [Fact]
     public async Task ExpiredUnleasedImageIsRemovedAndReloaded() {
+        var timeProvider = new TestTimeProvider();
         using var cache = new MemoryImageCache(new MemoryImageCacheOptions {
             AbsoluteExpiration = TimeSpan.FromMilliseconds(100)
-        });
+        }, timeProvider);
         var loads = 0;
         var first = await cache.GetOrCreateAsync("image", _ => CreateImageAsync(() => ++loads));
         first!.Dispose();
-        await Task.Delay(250);
+        timeProvider.Advance(TimeSpan.FromMilliseconds(250));
         using var second = await cache.GetOrCreateAsync("image", _ => CreateImageAsync(() => ++loads));
 
         second.Should().NotBeNull();
@@ -234,14 +235,15 @@ public sealed class MemoryImageCacheTests {
 
     [Fact]
     public async Task SlidingExpirationIsRenewedByAccess() {
+        var timeProvider = new TestTimeProvider();
         using var cache = new MemoryImageCache(new MemoryImageCacheOptions {
             SlidingExpiration = TimeSpan.FromMilliseconds(150)
-        });
+        }, timeProvider);
         var loads = 0;
         using var first = await cache.GetOrCreateAsync("image", _ => CreateImageAsync(() => ++loads));
-        await Task.Delay(80);
+        timeProvider.Advance(TimeSpan.FromMilliseconds(80));
         using var second = await cache.GetOrCreateAsync("image", _ => CreateImageAsync(() => ++loads));
-        await Task.Delay(80);
+        timeProvider.Advance(TimeSpan.FromMilliseconds(80));
         using var third = await cache.GetOrCreateAsync("image", _ => CreateImageAsync(() => ++loads));
 
         first!.Image.Should().BeSameAs(second!.Image);
@@ -251,15 +253,16 @@ public sealed class MemoryImageCacheTests {
 
     [Fact]
     public async Task AbsoluteExpirationWinsOverSlidingExpiration() {
+        var timeProvider = new TestTimeProvider();
         using var cache = new MemoryImageCache(new MemoryImageCacheOptions {
             AbsoluteExpiration = TimeSpan.FromMilliseconds(180),
             SlidingExpiration = TimeSpan.FromMilliseconds(500)
-        });
+        }, timeProvider);
         var loads = 0;
         using var first = await cache.GetOrCreateAsync("image", _ => CreateImageAsync(() => ++loads));
-        await Task.Delay(100);
+        timeProvider.Advance(TimeSpan.FromMilliseconds(100));
         using var second = await cache.GetOrCreateAsync("image", _ => CreateImageAsync(() => ++loads));
-        await Task.Delay(180);
+        timeProvider.Advance(TimeSpan.FromMilliseconds(180));
         using var third = await cache.GetOrCreateAsync("image", _ => CreateImageAsync(() => ++loads));
 
         first!.Image.Should().BeSameAs(second!.Image);
@@ -268,7 +271,25 @@ public sealed class MemoryImageCacheTests {
     }
 
     [Fact]
-    public async Task InvalidExpirationIsRejected() {
+    public async Task CleanupTimerRemovesExpiredUnleasedEntry() {
+        var timeProvider = new TestTimeProvider();
+        using var cache = new MemoryImageCache(new MemoryImageCacheOptions {
+            AbsoluteExpiration = TimeSpan.FromMilliseconds(100)
+        }, timeProvider);
+        var loads = 0;
+        var first = await cache.GetOrCreateAsync("image", _ => CreateImageAsync(() => ++loads));
+        first!.Dispose();
+
+        timeProvider.Advance(TimeSpan.FromMilliseconds(100));
+        timeProvider.FireTimers();
+        using var second = await cache.GetOrCreateAsync("image", _ => CreateImageAsync(() => ++loads));
+
+        second.Should().NotBeNull();
+        loads.Should().Be(2);
+    }
+
+    [Fact]
+    public void InvalidExpirationIsRejected() {
         Assert.Throws<ArgumentOutOfRangeException>(() => new MemoryImageCache(new MemoryImageCacheOptions {
             AbsoluteExpiration = TimeSpan.Zero
         }));
@@ -279,7 +300,6 @@ public sealed class MemoryImageCacheTests {
 
     [Fact]
     public async Task InvalidArgumentsAreRejected() {
-
         using var cache = new MemoryImageCache();
         await Assert.ThrowsAsync<ArgumentException>(() => cache.GetOrCreateAsync("", _ => CreateImageAsync()));
         await Assert.ThrowsAsync<ArgumentNullException>(() => cache.GetOrCreateAsync("image", null!));

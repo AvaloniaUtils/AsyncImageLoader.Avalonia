@@ -9,6 +9,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Avalonia.VisualTree;
 
 namespace AsyncImageLoader;
 
@@ -81,9 +82,10 @@ public class AdvancedImage : ContentControl {
 
     private bool _shouldLoaderChangeTriggerUpdate;
 
-    private CancellationTokenSource? _updateCancellationToken;
     private readonly ParametrizedLogger? _logger;
-    private IImageLease? _currentLease;
+    private readonly ImageRequestCoordinator _requestCoordinator = new();
+    private bool _suppressSourceUpdate;
+    private bool _settingCurrentImage;
 
     static AdvancedImage() {
         AffectsRender<AdvancedImage>(CurrentImageProperty, StretchProperty, StretchDirectionProperty,
@@ -172,7 +174,7 @@ public class AdvancedImage : ContentControl {
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
-        if (change.Property == SourceProperty)
+        if (change.Property == SourceProperty && !_suppressSourceUpdate)
             UpdateImage(change.GetNewValue<string>(), Loader);
         else if (change.Property == LoaderProperty && ShouldLoaderChangeTriggerUpdate)
             UpdateImage(Source, Loader);
@@ -188,35 +190,42 @@ public class AdvancedImage : ContentControl {
     }
 
     private void ClearSourceIfUserProvideImage() {
-        if (CurrentImage is not null and not ImageWrapper) {
-            // User provided image himself
-            Source = null;
+        if (!_settingCurrentImage && CurrentImage is not null and not ImageWrapper) {
+            _requestCoordinator.Cancel();
+            if (Source is not null) {
+                _suppressSourceUpdate = true;
+                try {
+                    Source = null;
+                }
+                finally {
+                    _suppressSourceUpdate = false;
+                }
+            }
         }
     }
 
     private async void UpdateImage(string? source, IAsyncImageLoader? loader) {
-        var cancellationTokenSource = new CancellationTokenSource();
-
-        var oldCancellationToken = Interlocked.Exchange(ref _updateCancellationToken, cancellationTokenSource);
-
-        try {
-            oldCancellationToken?.Cancel();
+        if (!this.IsAttachedToVisualTree()) {
+            if (CurrentImage is ImageWrapper)
+                SetCurrentImage(null);
+            _requestCoordinator.Cancel();
+            if (source is null && CurrentImage is null)
+                SetCurrentImage(FallbackImage);
+            IsLoading = false;
+            return;
         }
-        catch (ObjectDisposedException) {
-        }
 
-        _currentLease?.Dispose();
-        _currentLease = null;
-        CurrentImage = source is null ? FallbackImage : null;
+        SetCurrentImage(source is null ? FallbackImage : null);
+        var request = _requestCoordinator.Begin();
 
         if (source is null) {
-            // User provided image himself
+            _requestCoordinator.Cancel();
             IsLoading = false;
             return;
         }
 
         IsLoading = true;
-        CurrentImage = null;
+        SetCurrentImage(null);
 
         IImageLease? bitmap = null;
         try {
@@ -226,7 +235,7 @@ public class AdvancedImage : ContentControl {
 
                 // A small delay allows to cancel early if the image goes out of screen too fast (eg. scrolling)
                 // The Bitmap constructor is expensive and cannot be cancelled
-                await Task.Delay(10, cancellationTokenSource.Token);
+                await Task.Delay(10, request.CancellationToken);
 
                 loader ??= ImageLoader.AsyncImageLoader;
 
@@ -234,9 +243,9 @@ public class AdvancedImage : ContentControl {
                     source,
                     _baseUri,
                     TopLevel.GetTopLevel(this)?.StorageProvider),
-                    cancellationTokenSource.Token);
+                    request.CancellationToken);
             }
-            catch (TaskCanceledException) {
+            catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested) {
             }
             catch (Exception e) {
                 _logger?.Log(this, "AdvancedImage image resolution failed: {0}", e);
@@ -244,16 +253,36 @@ public class AdvancedImage : ContentControl {
             }
         }
         finally {
-            if (!cancellationTokenSource.IsCancellationRequested) {
-                _currentLease = bitmap;
-                CurrentImage = bitmap is null ? null : new ImageWrapper(bitmap.Image);
-            }
-            else {
-                bitmap?.Dispose();
-            }
+            if (_requestCoordinator.TrySetLease(request, bitmap)) {
+                SetCurrentImage(bitmap is null ? null : new ImageWrapper(bitmap.Image));
 
-            IsLoading = false;
-            cancellationTokenSource.Dispose();
+                if (_requestCoordinator.TryComplete(request))
+                    IsLoading = false;
+            }
+        }
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e) {
+        base.OnAttachedToVisualTree(e);
+        if (Source is not null)
+            UpdateImage(Source, Loader);
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) {
+        if (CurrentImage is ImageWrapper)
+            SetCurrentImage(null);
+        _requestCoordinator.Cancel();
+        IsLoading = false;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void SetCurrentImage(IImage? image) {
+        _settingCurrentImage = true;
+        try {
+            CurrentImage = image;
+        }
+        finally {
+            _settingCurrentImage = false;
         }
     }
 

@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Threading;
+using System.Runtime.CompilerServices;
 using AsyncImageLoader.Core;
 using AsyncImageLoader.Loaders;
 using Avalonia;
@@ -14,7 +12,7 @@ namespace AsyncImageLoader;
 public static class ImageBrushLoader {
     private static readonly ParametrizedLogger? Logger;
     public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
-    private static readonly ConcurrentDictionary<ImageBrush, PendingOperation> PendingOperations = new();
+    private static readonly ConditionalWeakTable<ImageBrush, BrushState> States = new();
 
     static ImageBrushLoader() {
         SourceProperty.Changed.AddClassHandler<ImageBrush>(OnSourceChanged);
@@ -26,35 +24,39 @@ public static class ImageBrushLoader {
         if (oldValue == newValue)
             return;
 
-        var operation = PendingOperations.AddOrUpdate(imageBrush, new PendingOperation(),
-            (_, old) => {
-                old.Dispose();
-                return new PendingOperation();
-            });
+        var state = States.GetValue(imageBrush, static _ => new BrushState());
         SetIsLoading(imageBrush, true);
         imageBrush.Source = null;
+        var request = state.Coordinator.Begin();
 
-        Bitmap? bitmap = null;
+        IImageBrushSource? image = null;
+        IImageLease? lease = null;
         try {
             if (!string.IsNullOrWhiteSpace(newValue)) {
-                operation.Lease = await AsyncImageLoader.LoadAsync(new ImageLoadRequest(newValue!), operation.Cancellation.Token);
-                bitmap = operation.Lease?.Image as Bitmap;
+                lease = await AsyncImageLoader.LoadAsync(new ImageLoadRequest(newValue!), request.CancellationToken);
+                image = lease?.Image as IImageBrushSource;
+                if (lease is not null && image is null) {
+                    lease.Dispose();
+                    lease = null;
+                }
             }
 
-            if (bitmap == null && GetFallbackImage(imageBrush) is Bitmap fallback)
-                bitmap = fallback;
+            if (image == null && GetFallbackImage(imageBrush) is Bitmap fallback)
+                image = fallback;
+        }
+        catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested) {
         }
         catch (Exception e) {
             Logger?.Log("ImageBrushLoader", "ImageBrushLoader image resolution failed: {0}", e);
         }
 
-        if (PendingOperations.TryRemove(new KeyValuePair<ImageBrush, PendingOperation>(imageBrush, operation))) {
+        if (state.Coordinator.TrySetLease(request, lease)) {
             if (GetSource(imageBrush) == newValue) {
-                imageBrush.Source = bitmap;
+                imageBrush.Source = image;
             }
 
-            SetIsLoading(imageBrush, false);
-            operation.DisposeCancellation();
+            if (state.Coordinator.TryComplete(request))
+                SetIsLoading(imageBrush, false);
         }
     }
 
@@ -106,18 +108,19 @@ public static class ImageBrushLoader {
         element.SetValue(IsLoadingProperty, value);
     }
 
-    private sealed class PendingOperation : IDisposable {
-        public CancellationTokenSource Cancellation { get; } = new();
-        public IImageLease? Lease { get; set; }
+    private sealed class BrushState {
+        public ImageRequestCoordinator Coordinator { get; } = new();
 
-        public void Dispose() {
-            Cancellation.Cancel();
-            Lease?.Dispose();
-            Cancellation.Dispose();
-        }
-
-        public void DisposeCancellation() {
-            Cancellation.Dispose();
+        ~BrushState() {
+            var coordinator = Coordinator;
+            System.Threading.ThreadPool.QueueUserWorkItem(static state => {
+                try {
+                    ((ImageRequestCoordinator)state!).Dispose();
+                }
+                catch {
+                    // A custom release callback must not escape a GC fallback.
+                }
+            }, coordinator);
         }
     }
 }
