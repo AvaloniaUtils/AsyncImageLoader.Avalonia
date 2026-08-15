@@ -2,11 +2,11 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using AsyncImageLoader.Core;
 using AsyncImageLoader.Core.Caching;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using AwesomeAssertions;
+using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
 namespace AsyncImageLoader.Avalonia.Tests;
@@ -209,7 +209,7 @@ public sealed class MemoryImageCacheTests {
 
     [Fact]
     public async Task ExpiredImageRemainsSharedWhileItHasAnActiveLease() {
-        var timeProvider = new TestTimeProvider();
+        var timeProvider = new FakeTimeProvider();
         using var cache = new MemoryImageCache(new MemoryImageCacheOptions {
             AbsoluteExpiration = TimeSpan.FromMilliseconds(100)
         }, timeProvider);
@@ -224,7 +224,7 @@ public sealed class MemoryImageCacheTests {
 
     [Fact]
     public async Task ExpiredUnleasedImageIsRemovedAndReloaded() {
-        var timeProvider = new TestTimeProvider();
+        var timeProvider = new FakeTimeProvider();
         using var cache = new MemoryImageCache(new MemoryImageCacheOptions {
             AbsoluteExpiration = TimeSpan.FromMilliseconds(100)
         }, timeProvider);
@@ -240,7 +240,7 @@ public sealed class MemoryImageCacheTests {
 
     [Fact]
     public async Task SlidingExpirationIsRenewedByAccess() {
-        var timeProvider = new TestTimeProvider();
+        var timeProvider = new FakeTimeProvider();
         using var cache = new MemoryImageCache(new MemoryImageCacheOptions {
             SlidingExpiration = TimeSpan.FromMilliseconds(150)
         }, timeProvider);
@@ -258,7 +258,7 @@ public sealed class MemoryImageCacheTests {
 
     [Fact]
     public async Task AbsoluteExpirationWinsOverSlidingExpiration() {
-        var timeProvider = new TestTimeProvider();
+        var timeProvider = new FakeTimeProvider();
         using var cache = new MemoryImageCache(new MemoryImageCacheOptions {
             AbsoluteExpiration = TimeSpan.FromMilliseconds(180),
             SlidingExpiration = TimeSpan.FromMilliseconds(500)
@@ -277,7 +277,7 @@ public sealed class MemoryImageCacheTests {
 
     [Fact]
     public async Task CleanupTimerRemovesExpiredUnleasedEntry() {
-        var timeProvider = new TestTimeProvider();
+        var timeProvider = new FakeTimeProvider();
         using var cache = new MemoryImageCache(new MemoryImageCacheOptions {
             AbsoluteExpiration = TimeSpan.FromMilliseconds(100)
         }, timeProvider);
@@ -286,7 +286,6 @@ public sealed class MemoryImageCacheTests {
         first!.Dispose();
 
         timeProvider.Advance(TimeSpan.FromMilliseconds(100));
-        timeProvider.FireTimers();
         using var second = await cache.GetOrCreateAsync("image", _ => CreateImageAsync(() => ++loads));
 
         second.Should().NotBeNull();

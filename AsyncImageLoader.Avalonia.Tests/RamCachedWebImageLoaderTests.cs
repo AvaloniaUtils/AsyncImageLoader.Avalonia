@@ -3,11 +3,11 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using AsyncImageLoader.Core;
 using AsyncImageLoader.Core.Caching;
 using AsyncImageLoader.Core.Pipeline;
 using AsyncImageLoader.Loaders;
 using AwesomeAssertions;
+using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
 namespace AsyncImageLoader.Avalonia.Tests;
@@ -66,7 +66,7 @@ public sealed class RamCachedWebImageLoaderTests {
             Interlocked.Increment(ref requests);
             return TestHttpMessageHandler.CreateResponse(Png);
         }));
-        var timeProvider = new TestTimeProvider();
+        var timeProvider = new FakeTimeProvider();
         using var loader = new RamCachedWebImageLoader(client, false, new MemoryImageCacheOptions {
             AbsoluteExpiration = TimeSpan.FromMilliseconds(100)
         }, timeProvider);
@@ -88,7 +88,7 @@ public sealed class RamCachedWebImageLoaderTests {
             Interlocked.Increment(ref requests);
             return TestHttpMessageHandler.CreateResponse(Png);
         }));
-        var timeProvider = new TestTimeProvider();
+        var timeProvider = new FakeTimeProvider();
         using var loader = new RamCachedWebImageLoader(client, false, new MemoryImageCacheOptions {
             AbsoluteExpiration = TimeSpan.FromMilliseconds(100)
         }, timeProvider);

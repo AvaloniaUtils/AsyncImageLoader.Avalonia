@@ -2,7 +2,6 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using AsyncImageLoader.Core;
 using AsyncImageLoader.Core.Caching;
 using AwesomeAssertions;
 using Xunit;

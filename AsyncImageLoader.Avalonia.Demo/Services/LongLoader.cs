@@ -1,6 +1,5 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using AsyncImageLoader.Core;
 using AsyncImageLoader.Core.Leases;
 using AsyncImageLoader.Core.Pipeline;
 
