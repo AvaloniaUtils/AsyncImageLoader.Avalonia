@@ -4,8 +4,8 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncImageLoader.Core;
-using AwesomeAssertions;
 using Avalonia.Media.Imaging;
+using AwesomeAssertions;
 using Xunit;
 
 namespace AsyncImageLoader.Avalonia.Tests;
@@ -36,7 +36,7 @@ public sealed class ImageLoaderPipelineTests {
 
         first.Should().NotBeNull();
         second.Should().NotBeNull();
-        first!.Image.Should().BeSameAs(second!.Image);
+        first.Image.Should().BeSameAs(second.Image);
         handlerCalls.Should().Be(1);
         decodeCalls.Should().Be(1);
     }
@@ -57,7 +57,7 @@ public sealed class ImageLoaderPipelineTests {
             using var lease = await pipeline.LoadAsync(new ImageLoadRequest(path));
 
             lease.Should().NotBeNull();
-            ((Bitmap)lease!.Image).Size.Width.Should().Be(1);
+            ((Bitmap)lease.Image).Size.Width.Should().Be(1);
         }
         finally {
             File.Delete(path);

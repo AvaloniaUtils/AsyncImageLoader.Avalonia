@@ -37,7 +37,7 @@ public sealed class RamCachedWebImageLoaderTests {
 
         first.Should().NotBeNull();
         second.Should().NotBeNull();
-        first!.Image.Should().BeSameAs(second!.Image);
+        first.Image.Should().BeSameAs(second.Image);
         requests.Should().Be(1);
     }
 
@@ -64,7 +64,7 @@ public sealed class RamCachedWebImageLoaderTests {
             return TestHttpMessageHandler.CreateResponse(Png);
         }));
         var timeProvider = new TestTimeProvider();
-        using var loader = new RamCachedWebImageLoader(client, false, new RamCacheOptions {
+        using var loader = new RamCachedWebImageLoader(client, false, new MemoryImageCacheOptions {
             AbsoluteExpiration = TimeSpan.FromMilliseconds(100)
         }, timeProvider);
         using var first = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
@@ -74,7 +74,7 @@ public sealed class RamCachedWebImageLoaderTests {
 
         first.Should().NotBeNull();
         second.Should().NotBeNull();
-        second!.Image.Should().BeSameAs(first!.Image);
+        second.Image.Should().BeSameAs(first.Image);
         requests.Should().Be(1);
     }
 
@@ -86,7 +86,7 @@ public sealed class RamCachedWebImageLoaderTests {
             return TestHttpMessageHandler.CreateResponse(Png);
         }));
         var timeProvider = new TestTimeProvider();
-        using var loader = new RamCachedWebImageLoader(client, false, new RamCacheOptions {
+        using var loader = new RamCachedWebImageLoader(client, false, new MemoryImageCacheOptions {
             AbsoluteExpiration = TimeSpan.FromMilliseconds(100)
         }, timeProvider);
         var first = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
@@ -114,13 +114,13 @@ public sealed class RamCachedWebImageLoaderTests {
         using var second = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
 
         second.Should().NotBeNull();
-        second!.Image.Should().NotBeSameAs(first.Image);
+        second.Image.Should().NotBeSameAs(first.Image);
         requests.Should().Be(2);
     }
 
     [Fact]
     public void InvalidExpirationIsRejected() {
-        var action = () => new RamCachedWebImageLoader(new RamCacheOptions {
+        var action = () => new RamCachedWebImageLoader(new MemoryImageCacheOptions {
             SlidingExpiration = TimeSpan.Zero
         });
 

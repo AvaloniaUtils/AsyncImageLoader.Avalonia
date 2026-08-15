@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using AsyncImageLoader.Core;
 using AsyncImageLoader.Loaders;
 using Avalonia;
@@ -33,7 +34,7 @@ public static class ImageBrushLoader {
         IImageLease? lease = null;
         try {
             if (!string.IsNullOrWhiteSpace(newValue)) {
-                lease = await AsyncImageLoader.LoadAsync(new ImageLoadRequest(newValue!), request.CancellationToken);
+                lease = await AsyncImageLoader.LoadAsync(new ImageLoadRequest(newValue), request.CancellationToken);
                 image = lease?.Image as IImageBrushSource;
                 if (lease is not null && image is null) {
                     lease.Dispose();
@@ -41,7 +42,7 @@ public static class ImageBrushLoader {
                 }
             }
 
-            if (image == null && GetFallbackImage(imageBrush) is Bitmap fallback)
+            if (image == null && GetFallbackImage(imageBrush) is { } fallback)
                 image = fallback;
         }
         catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested) {
@@ -113,7 +114,7 @@ public static class ImageBrushLoader {
 
         ~BrushState() {
             var coordinator = Coordinator;
-            System.Threading.ThreadPool.QueueUserWorkItem(static state => {
+            ThreadPool.QueueUserWorkItem(static state => {
                 try {
                     ((ImageRequestCoordinator)state!).Dispose();
                 }

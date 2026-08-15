@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using AsyncImageLoader.Core;
 using AsyncImageLoader.Loaders;
@@ -31,7 +32,7 @@ public static class ImageLoader {
 
     private static async void OnSourceChanged(Image sender, AvaloniaPropertyChangedEventArgs args) {
         var source = args.GetNewValue<string?>();
-        var state = States.GetValue(sender, static image => CreateState(image));
+        var state = States.GetValue(sender, static _ => new ImageState());
         state.EnsureSubscribed(sender);
 
         if (!sender.IsAttachedToVisualTree()) {
@@ -42,10 +43,6 @@ public static class ImageLoader {
         }
 
         await LoadAsync(sender, source, state);
-    }
-
-    private static ImageState CreateState(Image image) {
-        return new ImageState();
     }
 
     private static void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs args) {
@@ -112,7 +109,7 @@ public static class ImageLoader {
         public ImageRequestCoordinator Coordinator { get; } = new();
 
         public void EnsureSubscribed(Image image) {
-            if (System.Threading.Interlocked.Exchange(ref _subscribed, 1) != 0)
+            if (Interlocked.Exchange(ref _subscribed, 1) != 0)
                 return;
 
             image.AttachedToVisualTree += OnAttachedToVisualTree;
@@ -121,7 +118,7 @@ public static class ImageLoader {
 
         ~ImageState() {
             var coordinator = Coordinator;
-            System.Threading.ThreadPool.QueueUserWorkItem(static state => {
+            ThreadPool.QueueUserWorkItem(static state => {
                 try {
                     ((ImageRequestCoordinator)state!).Dispose();
                 }

@@ -31,7 +31,7 @@ public sealed class DiskCachedWebImageLoaderTests {
 
             first.Should().NotBeNull();
             second.Should().NotBeNull();
-            second!.Image.Should().NotBeSameAs(first!.Image);
+            second.Image.Should().NotBeSameAs(first.Image);
             requests.Should().Be(1);
         }
         finally {

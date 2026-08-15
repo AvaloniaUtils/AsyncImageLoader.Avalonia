@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using AsyncImageLoader.Core;
 using AwesomeAssertions;
-using Avalonia.Media.Imaging;
 using Xunit;
 
 namespace AsyncImageLoader.Avalonia.Tests;

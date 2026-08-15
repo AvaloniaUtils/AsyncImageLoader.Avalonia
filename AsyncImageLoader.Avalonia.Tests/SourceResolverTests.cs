@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using AsyncImageLoader.Core;
 using AwesomeAssertions;
@@ -19,8 +20,8 @@ public sealed class SourceResolverTests {
 
             result.Should().NotBeNull();
             using var memory = new MemoryStream();
-            await result!.Stream.CopyToAsync(memory);
-            memory.ToArray().Should().Equal(new byte[] { 1, 2, 3 });
+            await result.Stream.CopyToAsync(memory);
+            memory.ToArray().Should().Equal(1, 2, 3);
         }
         finally {
             File.Delete(path);
@@ -48,8 +49,8 @@ public sealed class SourceResolverTests {
 
             result.Should().NotBeNull();
             using var memory = new MemoryStream();
-            await result!.Stream.CopyToAsync(memory);
-            memory.ToArray().Should().Equal(new byte[] { 4, 5, 6 });
+            await result.Stream.CopyToAsync(memory);
+            memory.ToArray().Should().Equal(4, 5, 6);
         }
         finally {
             File.Delete(path);
@@ -76,7 +77,7 @@ public sealed class SourceResolverTests {
 
         result.Should().BeSameAs(expected);
         second.Calls.Should().Be(0);
-        result!.Dispose();
+        result.Dispose();
     }
 
     private sealed class StubResolver : IImageSourceResolver {
@@ -90,7 +91,7 @@ public sealed class SourceResolverTests {
 
         public Task<ResolvedImageSource?> ResolveAsync(
             ImageLoadRequest request,
-            System.Threading.CancellationToken cancellationToken = default) {
+            CancellationToken cancellationToken = default) {
             Calls++;
             return Task.FromResult<ResolvedImageSource?>(_result);
         }

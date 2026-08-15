@@ -1,8 +1,8 @@
 using System;
 using AsyncImageLoader.Core;
-using AwesomeAssertions;
 using Avalonia;
 using Avalonia.Media;
+using AwesomeAssertions;
 using Xunit;
 
 namespace AsyncImageLoader.Avalonia.Tests;
@@ -73,6 +73,7 @@ public sealed class ImageRequestCoordinatorTests {
         var first = coordinator.Begin();
         ImageRequestCoordinator.Request reentrantRequest = default;
         var image = new TestImage();
+        // ReSharper disable once AccessToDisposedClosure
         coordinator.TrySetLease(first, ImageLease.Create(image, () => reentrantRequest = coordinator.Begin()));
 
         var outerRequest = coordinator.Begin();

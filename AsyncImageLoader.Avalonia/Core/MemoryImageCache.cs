@@ -61,7 +61,7 @@ public sealed class MemoryImageCache : IImageMemoryCache {
                 else {
                     Touch(entry);
                     entry.LeaseCount++;
-                    return new MemoryImageLease(entry.Image, () => Release(key, entry));
+                    return new MemoryImageLease(entry.Image, () => Release(entry));
                 }
             }
 
@@ -110,7 +110,7 @@ public sealed class MemoryImageCache : IImageMemoryCache {
             }
 
             entry.LeaseCount++;
-            return new MemoryImageLease(image, () => Release(key, entry));
+            return new MemoryImageLease(image, () => Release(entry));
         }
     }
 
@@ -172,7 +172,7 @@ public sealed class MemoryImageCache : IImageMemoryCache {
         }
     }
 
-    private void Release(string key, Entry entry) {
+    private void Release(Entry entry) {
         lock (_gate) {
             if (entry.LeaseCount > 0)
                 entry.LeaseCount--;

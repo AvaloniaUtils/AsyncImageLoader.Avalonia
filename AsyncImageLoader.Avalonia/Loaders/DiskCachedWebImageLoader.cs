@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,7 +9,7 @@ namespace AsyncImageLoader.Loaders;
 /// <summary>
 /// Provides image loading with RAM and disk byte caches.
 /// </summary>
-public sealed class DiskCachedWebImageLoader : global::AsyncImageLoader.IAsyncImageLoader {
+public sealed class DiskCachedWebImageLoader : IAsyncImageLoader {
     private readonly bool _disposeHttpClient;
     private readonly HttpClient _httpClient;
     private readonly ImageLoaderPipeline _pipeline;
@@ -19,14 +18,14 @@ public sealed class DiskCachedWebImageLoader : global::AsyncImageLoader.IAsyncIm
     /// Initializes a disk-cached loader.
     /// </summary>
     public DiskCachedWebImageLoader(string cacheFolder = "Cache/Images/")
-        : this(new HttpClient(), true, null, cacheFolder, true) {
+        : this(new HttpClient(), true, null, cacheFolder) {
     }
 
     /// <summary>
     /// Initializes a disk-cached loader with RAM options.
     /// </summary>
-    public DiskCachedWebImageLoader(RamCacheOptions options, string cacheFolder = "Cache/Images/")
-        : this(new HttpClient(), true, options, cacheFolder, true) {
+    public DiskCachedWebImageLoader(MemoryImageCacheOptions options, string cacheFolder = "Cache/Images/")
+        : this(new HttpClient(), true, options, cacheFolder) {
     }
 
     /// <summary>
@@ -36,7 +35,7 @@ public sealed class DiskCachedWebImageLoader : global::AsyncImageLoader.IAsyncIm
         HttpClient httpClient,
         bool disposeHttpClient,
         string cacheFolder = "Cache/Images/")
-        : this(httpClient, disposeHttpClient, null, cacheFolder, true) {
+        : this(httpClient, disposeHttpClient, null, cacheFolder) {
     }
 
     /// <summary>
@@ -45,28 +44,14 @@ public sealed class DiskCachedWebImageLoader : global::AsyncImageLoader.IAsyncIm
     public DiskCachedWebImageLoader(
         HttpClient httpClient,
         bool disposeHttpClient,
-        RamCacheOptions options,
-        string cacheFolder = "Cache/Images/")
-        : this(httpClient, disposeHttpClient, (RamCacheOptions?)options, cacheFolder, true) {
-    }
-
-    private DiskCachedWebImageLoader(
-        HttpClient httpClient,
-        bool disposeHttpClient,
-        RamCacheOptions? options,
-        string cacheFolder,
-        bool initialize) {
+        MemoryImageCacheOptions? options,
+        string cacheFolder = "Cache/Images/") {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         if (string.IsNullOrWhiteSpace(cacheFolder))
             throw new ArgumentException("Cache folder cannot be empty.", nameof(cacheFolder));
 
         _disposeHttpClient = disposeHttpClient;
-        _pipeline = ImageLoaderPipelineBuilder.DiskCached(
-            cacheFolder,
-            new MemoryImageCacheOptions {
-                AbsoluteExpiration = options?.AbsoluteExpiration,
-                SlidingExpiration = options?.SlidingExpiration
-            })
+        _pipeline = ImageLoaderPipelineBuilder.DiskCached(cacheFolder, options)
             .UseHttpClient(_httpClient)
             .Build();
     }

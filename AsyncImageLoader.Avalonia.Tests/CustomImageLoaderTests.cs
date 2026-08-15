@@ -2,10 +2,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncImageLoader.Core;
-using AsyncImageLoader;
-using AwesomeAssertions;
-using Avalonia.Media;
 using Avalonia;
+using Avalonia.Media;
+using AwesomeAssertions;
 using Xunit;
 
 namespace AsyncImageLoader.Avalonia.Tests;
@@ -19,7 +18,7 @@ public sealed class CustomImageLoaderTests {
 
         lease.Should().NotBeNull();
         loader.Requests.Should().Be(1);
-        lease!.Image.Should().BeOfType<TestImage>();
+        lease.Image.Should().BeOfType<TestImage>();
     }
 
     [Fact]

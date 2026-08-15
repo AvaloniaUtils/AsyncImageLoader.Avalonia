@@ -21,7 +21,7 @@ public sealed class HttpImageTransportTests {
         using var memory = new MemoryStream();
         await stream!.CopyToAsync(memory);
 
-        memory.ToArray().Should().Equal(new byte[] { 1, 2, 3 });
+        memory.ToArray().Should().Equal(1, 2, 3);
     }
 
     [Fact]

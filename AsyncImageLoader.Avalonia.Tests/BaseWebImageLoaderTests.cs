@@ -1,13 +1,13 @@
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Http;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using AsyncImageLoader.Loaders;
 using AsyncImageLoader.Core;
-using AwesomeAssertions;
+using AsyncImageLoader.Loaders;
 using Avalonia.Media.Imaging;
+using AwesomeAssertions;
 using Xunit;
 
 namespace AsyncImageLoader.Avalonia.Tests;
@@ -28,7 +28,7 @@ public sealed class BaseWebImageLoaderTests {
         var bitmap = lease?.Image as Bitmap;
 
         bitmap.Should().NotBeNull();
-        bitmap!.Size.Width.Should().Be(1);
+        bitmap.Size.Width.Should().Be(1);
         bitmap.Size.Height.Should().Be(1);
     }
 
@@ -42,7 +42,7 @@ public sealed class BaseWebImageLoaderTests {
         using var lease = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
 
         lease.Should().NotBeNull();
-        lease!.Image.Should().BeOfType<Bitmap>();
+        lease.Image.Should().BeOfType<Bitmap>();
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public sealed class BaseWebImageLoaderTests {
 
         first.Should().NotBeNull();
         second.Should().NotBeNull();
-        first!.Image.Should().NotBeSameAs(second!.Image);
+        first.Image.Should().NotBeSameAs(second.Image);
         requests.Should().Be(2);
     }
 

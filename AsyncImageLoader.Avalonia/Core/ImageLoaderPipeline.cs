@@ -1,15 +1,16 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Media;
 
 namespace AsyncImageLoader.Core;
 
 /// <summary>
 /// Composes source resolution, transport, decoding and image caches.
 /// </summary>
-public sealed class ImageLoaderPipeline : global::AsyncImageLoader.IAsyncImageLoader {
+public sealed class ImageLoaderPipeline : IAsyncImageLoader {
     private readonly IImageSourceResolver _sourceResolver;
     private readonly IImageTransport _transport;
     private readonly IBitmapDecoder _decoder;
@@ -83,7 +84,7 @@ public sealed class ImageLoaderPipeline : global::AsyncImageLoader.IAsyncImageLo
         _memoryCache.Clear();
     }
 
-    private async Task<Avalonia.Media.IImage?> LoadImageAsync(
+    private async Task<IImage?> LoadImageAsync(
         ImageLoadRequest request,
         CancellationToken cancellationToken) {
         using var resolved = await _sourceResolver.ResolveAsync(request, cancellationToken)

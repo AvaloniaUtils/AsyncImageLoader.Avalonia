@@ -1,6 +1,5 @@
 ﻿using System;
 using Avalonia;
-using Avalonia.Controls.ApplicationLifetimes;
 using ReactiveUI.Avalonia;
 
 namespace AsyncImageLoader.Avalonia.Demo;
@@ -18,5 +17,5 @@ class Program {
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .LogToTrace()
-            .UseReactiveUI(rxui => { });
+            .UseReactiveUI(_ => { });
 }

@@ -9,22 +9,24 @@ namespace AsyncImageLoader.Loaders;
 /// <summary>
 /// Provides image loading with a lease-aware in-memory cache.
 /// </summary>
-public sealed class RamCachedWebImageLoader : global::AsyncImageLoader.IAsyncImageLoader {
+public sealed class RamCachedWebImageLoader : IAsyncImageLoader {
     private readonly bool _disposeHttpClient;
     private readonly HttpClient _httpClient;
     private readonly ImageLoaderPipeline _pipeline;
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Initializes a loader with RAM retention options.
+    /// </summary>
     public RamCachedWebImageLoader() : this(null) {
     }
 
     /// <summary>
     /// Initializes a loader with RAM retention options.
     /// </summary>
-    public RamCachedWebImageLoader(RamCacheOptions? options) {
+    public RamCachedWebImageLoader(MemoryImageCacheOptions? options) {
         _httpClient = new HttpClient();
         _disposeHttpClient = true;
-        _pipeline = ImageLoaderPipelineBuilder.RamCached(CreateMemoryOptions(options))
+        _pipeline = ImageLoaderPipelineBuilder.RamCached(options)
             .UseHttpClient(_httpClient)
             .Build();
     }
@@ -42,18 +44,18 @@ public sealed class RamCachedWebImageLoader : global::AsyncImageLoader.IAsyncIma
     public RamCachedWebImageLoader(
         HttpClient httpClient,
         bool disposeHttpClient,
-        RamCacheOptions? options)
+        MemoryImageCacheOptions? options)
         : this(httpClient, disposeHttpClient, options, TimeProvider.System) {
     }
 
     internal RamCachedWebImageLoader(
         HttpClient httpClient,
         bool disposeHttpClient,
-        RamCacheOptions? options,
+        MemoryImageCacheOptions? options,
         TimeProvider timeProvider) {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _disposeHttpClient = disposeHttpClient;
-        _pipeline = ImageLoaderPipelineBuilder.RamCached(CreateMemoryOptions(options), timeProvider)
+        _pipeline = ImageLoaderPipelineBuilder.RamCached(options, timeProvider)
             .UseHttpClient(_httpClient)
             .Build();
     }
@@ -79,12 +81,5 @@ public sealed class RamCachedWebImageLoader : global::AsyncImageLoader.IAsyncIma
         _pipeline.Dispose();
         if (_disposeHttpClient)
             _httpClient.Dispose();
-    }
-
-    private static MemoryImageCacheOptions CreateMemoryOptions(RamCacheOptions? options) {
-        return new MemoryImageCacheOptions {
-            AbsoluteExpiration = options?.AbsoluteExpiration,
-            SlidingExpiration = options?.SlidingExpiration
-        };
     }
 }

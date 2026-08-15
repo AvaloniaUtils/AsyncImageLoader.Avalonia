@@ -1,10 +1,11 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using AsyncImageLoader.Core;
-using AwesomeAssertions;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using AwesomeAssertions;
 using Xunit;
 
 namespace AsyncImageLoader.Avalonia.Tests;
@@ -25,7 +26,7 @@ public sealed class MemoryImageCacheTests {
 
         firstLease.Should().NotBeNull();
         secondLease.Should().NotBeNull();
-        firstLease!.Image.Should().BeSameAs(secondLease!.Image);
+        firstLease.Image.Should().BeSameAs(secondLease.Image);
         loads.Should().Be(1);
     }
 
@@ -63,6 +64,7 @@ public sealed class MemoryImageCacheTests {
         using var second = await cache.GetOrCreateAsync("image", _ => CreateImageAsync());
         var bitmap = (Bitmap)second!.Image;
 
+        // ReSharper disable once DisposeOnUsingVariable
         first!.Dispose();
         cache.Clear();
 
@@ -99,7 +101,7 @@ public sealed class MemoryImageCacheTests {
         var lease = await cache.GetOrCreateAsync("image", _ => CreateImageAsync());
 
         lease.Should().NotBeNull();
-        lease!.Dispose();
+        lease.Dispose();
         lease.Dispose();
 
         Assert.Throws<ObjectDisposedException>(() => lease.Image);
@@ -165,6 +167,7 @@ public sealed class MemoryImageCacheTests {
         var imageCreated = new TaskCompletionSource<Bitmap>(TaskCreationOptions.RunContinuationsAsynchronously);
         var cache = new MemoryImageCache();
         var load = cache.GetOrCreateAsync("image", _ => Task.Run<IImage?>(() => {
+            // ReSharper disable once AccessToDisposedClosure
             completion.Wait();
             var image = CreateBitmap();
             imageCreated.SetResult(image);
@@ -187,6 +190,7 @@ public sealed class MemoryImageCacheTests {
         var loads = 0;
         var load = cache.GetOrCreateAsync("image", _ => Task.Run<IImage?>(() => {
             Interlocked.Increment(ref loads);
+            // ReSharper disable once AccessToDisposedClosure
             completion.Wait();
             return CreateBitmap();
         }));
@@ -198,7 +202,7 @@ public sealed class MemoryImageCacheTests {
 
         first.Should().NotBeNull();
         second.Should().NotBeNull();
-        first!.Image.Should().NotBeSameAs(second!.Image);
+        first.Image.Should().NotBeSameAs(second.Image);
         loads.Should().Be(2);
     }
 
@@ -311,7 +315,7 @@ public sealed class MemoryImageCacheTests {
     }
 
     private static Bitmap CreateBitmap() {
-        using var stream = new System.IO.MemoryStream(Png);
+        using var stream = new MemoryStream(Png);
         return new Bitmap(stream);
     }
 }

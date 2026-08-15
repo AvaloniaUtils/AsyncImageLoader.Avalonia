@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using AsyncImageLoader.Core;
 using AwesomeAssertions;
@@ -79,7 +80,7 @@ public sealed class DiskImageByteCacheTests {
     }
 
     private sealed class ThrowingStream : MemoryStream {
-        public override Task CopyToAsync(Stream destination, int bufferSize, System.Threading.CancellationToken cancellationToken) {
+        public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken) {
             throw new IOException("Test failure");
         }
     }

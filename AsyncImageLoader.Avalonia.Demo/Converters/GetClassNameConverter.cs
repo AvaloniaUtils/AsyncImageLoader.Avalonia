@@ -8,7 +8,7 @@ public class GetClassNameConverter : IValueConverter {
     public static GetClassNameConverter Instance { get; } = new();
 
     /// <inheritdoc />
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) {
         if (value is null) {
             return "null";
         }
@@ -17,7 +17,7 @@ public class GetClassNameConverter : IValueConverter {
     }
 
     /// <inheritdoc />
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) {
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) {
         throw new NotSupportedException();
     }
 }
