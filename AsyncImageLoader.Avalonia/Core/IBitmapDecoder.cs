@@ -1,5 +1,6 @@
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 
 namespace AsyncImageLoader.Core;
@@ -14,5 +15,5 @@ public interface IBitmapDecoder {
     /// <param name="stream">The image data stream.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The decoded bitmap.</returns>
-    Bitmap Decode(Stream stream, CancellationToken cancellationToken = default);
+    Task<Bitmap> DecodeAsync(Stream stream, CancellationToken cancellationToken = default);
 }

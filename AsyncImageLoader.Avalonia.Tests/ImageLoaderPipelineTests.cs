@@ -97,9 +97,9 @@ public sealed class ImageLoaderPipelineTests {
             _onDecode = onDecode;
         }
 
-        public Bitmap Decode(Stream stream, CancellationToken cancellationToken = default) {
+        public Task<Bitmap> DecodeAsync(Stream stream, CancellationToken cancellationToken = default) {
             _onDecode();
-            return new Bitmap(stream);
+            return Task.FromResult(new Bitmap(stream));
         }
     }
 }

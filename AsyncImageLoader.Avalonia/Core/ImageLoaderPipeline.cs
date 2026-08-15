@@ -74,13 +74,13 @@ public sealed class ImageLoaderPipeline : global::AsyncImageLoader.IAsyncImageLo
         using var resolved = await _sourceResolver.ResolveAsync(request, cancellationToken)
             .ConfigureAwait(false);
         if (resolved is not null)
-            return _decoder.Decode(resolved.Stream, cancellationToken);
+            return await _decoder.DecodeAsync(resolved.Stream, cancellationToken).ConfigureAwait(false);
 
         using var encoded = await GetExternalDataAsync(request, cancellationToken).ConfigureAwait(false);
         if (encoded is null)
             return null;
 
-        return _decoder.Decode(encoded.Stream, cancellationToken);
+        return await _decoder.DecodeAsync(encoded.Stream, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<ResolvedImageSource?> GetExternalDataAsync(
@@ -104,6 +104,9 @@ public sealed class ImageLoaderPipeline : global::AsyncImageLoader.IAsyncImageLo
         }
         if (responseStream is null)
             return null;
+
+        if (_byteCache is null || !IsHttpSource(request.Source))
+            return new ResolvedImageSource(responseStream);
 
         var buffered = new MemoryStream();
         try {
