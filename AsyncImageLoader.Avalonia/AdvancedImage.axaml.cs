@@ -1,13 +1,14 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
+using AsyncImageLoader.Core.Leases;
+using AsyncImageLoader.Core.Pipeline;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Logging;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using Avalonia.Platform;
+using Avalonia.VisualTree;
 
 namespace AsyncImageLoader;
 
@@ -80,8 +81,10 @@ public class AdvancedImage : ContentControl {
 
     private bool _shouldLoaderChangeTriggerUpdate;
 
-    private CancellationTokenSource? _updateCancellationToken;
     private readonly ParametrizedLogger? _logger;
+    private readonly ImageRequestCoordinator _requestCoordinator = new();
+    private bool _suppressSourceUpdate;
+    private bool _settingCurrentImage;
 
     static AdvancedImage() {
         AffectsRender<AdvancedImage>(CurrentImageProperty, StretchProperty, StretchDirectionProperty,
@@ -170,10 +173,10 @@ public class AdvancedImage : ContentControl {
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
-        if (change.Property == SourceProperty)
+        if (change.Property == SourceProperty && !_suppressSourceUpdate)
             UpdateImage(change.GetNewValue<string>(), Loader);
         else if (change.Property == LoaderProperty && ShouldLoaderChangeTriggerUpdate)
-            UpdateImage(change.GetNewValue<string>(), Loader);
+            UpdateImage(Source, Loader);
         else if (change.Property == CurrentImageProperty)
             ClearSourceIfUserProvideImage();
         else if (change.Property == CornerRadiusProperty)
@@ -186,81 +189,100 @@ public class AdvancedImage : ContentControl {
     }
 
     private void ClearSourceIfUserProvideImage() {
-        if (CurrentImage is not null and not ImageWrapper) {
-            // User provided image himself
-            Source = null;
+        if (!_settingCurrentImage && CurrentImage is not null and not ImageWrapper) {
+            _requestCoordinator.Cancel();
+            if (Source is not null) {
+                _suppressSourceUpdate = true;
+                try {
+                    Source = null;
+                }
+                finally {
+                    _suppressSourceUpdate = false;
+                }
+            }
         }
     }
 
     private async void UpdateImage(string? source, IAsyncImageLoader? loader) {
-        var cancellationTokenSource = new CancellationTokenSource();
-
-        var oldCancellationToken = Interlocked.Exchange(ref _updateCancellationToken, cancellationTokenSource);
-
-        try {
-            oldCancellationToken?.Cancel();
-        }
-        catch (ObjectDisposedException) {
-        }
-
-        if (source is null && FallbackImage != null) {
-            CurrentImage =  FallbackImage;
+        if (!this.IsAttachedToVisualTree()) {
+            if (CurrentImage is ImageWrapper)
+                SetCurrentImage(null);
+            _requestCoordinator.Cancel();
+            if (source is null && CurrentImage is null)
+                SetCurrentImage(FallbackImage);
+            IsLoading = false;
+            return;
         }
 
-        if (source is null && CurrentImage is not ImageWrapper) {
-            // User provided image himself
+        SetCurrentImage(source is null ? FallbackImage : null);
+        var request = _requestCoordinator.Begin();
+
+        if (source is null) {
+            _requestCoordinator.Cancel();
+            IsLoading = false;
             return;
         }
 
         IsLoading = true;
-        CurrentImage = null;
+        SetCurrentImage(null);
 
-        var bitmap = await Task.Run(async () => {
+        IImageLease? bitmap = null;
+        try {
             try {
                 if (string.IsNullOrWhiteSpace(source))
-                    return null;
+                    return;
 
                 // A small delay allows to cancel early if the image goes out of screen too fast (eg. scrolling)
                 // The Bitmap constructor is expensive and cannot be cancelled
-                await Task.Delay(10, cancellationTokenSource.Token);
-
-                // Hack to support relative URI
-                // TODO: Refactor IAsyncImageLoader to support BaseUri 
-                try {
-                    var uri = new Uri(source, UriKind.RelativeOrAbsolute);
-                    if (AssetLoader.Exists(uri, _baseUri))
-                        return new Bitmap(AssetLoader.Open(uri, _baseUri));
-                }
-                catch (Exception) {
-                    // ignored
-                }
+                await Task.Delay(10, request.CancellationToken);
 
                 loader ??= ImageLoader.AsyncImageLoader;
 
-                if (loader is IAdvancedAsyncImageLoader advancedLoader) {
-                    return await advancedLoader.ProvideImageAsync(source, TopLevel.GetTopLevel(this)?.StorageProvider);
-                }
-
-                return await loader.ProvideImageAsync(source);
+                bitmap = await loader.LoadAsync(new ImageLoadRequest(
+                    source,
+                    _baseUri,
+                    TopLevel.GetTopLevel(this)?.StorageProvider),
+                    request.CancellationToken);
             }
-            catch (TaskCanceledException) {
-                return null;
+            catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested) {
             }
             catch (Exception e) {
                 _logger?.Log(this, "AdvancedImage image resolution failed: {0}", e);
 
-                return null;
             }
-            finally {
-                cancellationTokenSource.Dispose();
+        }
+        finally {
+            if (_requestCoordinator.TrySetLease(request, bitmap)) {
+                SetCurrentImage(bitmap is null ? null : new ImageWrapper(bitmap.Image));
+
+                if (_requestCoordinator.TryComplete(request))
+                    IsLoading = false;
             }
-        }, CancellationToken.None);
+        }
+    }
 
-        if (cancellationTokenSource.IsCancellationRequested)
-            return;
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e) {
+        base.OnAttachedToVisualTree(e);
+        if (Source is not null)
+            UpdateImage(Source, Loader);
+    }
 
-        CurrentImage = bitmap is null ? null : new ImageWrapper(bitmap);
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) {
+        if (CurrentImage is ImageWrapper)
+            SetCurrentImage(null);
+        _requestCoordinator.Cancel();
         IsLoading = false;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void SetCurrentImage(IImage? image) {
+        _settingCurrentImage = true;
+        try {
+            CurrentImage = image;
+        }
+        finally {
+            _settingCurrentImage = false;
+        }
     }
 
     private void UpdateCornerRadius(CornerRadius radius) {

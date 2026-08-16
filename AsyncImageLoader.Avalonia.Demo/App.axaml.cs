@@ -1,8 +1,8 @@
+using AsyncImageLoader.Avalonia.Demo.ViewModels;
+using AsyncImageLoader.Avalonia.Demo.Views;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using AsyncImageLoader.Avalonia.Demo.ViewModels;
-using AsyncImageLoader.Avalonia.Demo.Views;
 
 namespace AsyncImageLoader.Avalonia.Demo;
 

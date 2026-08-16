@@ -1,14 +1,20 @@
-﻿using System.Threading.Tasks;
-using AsyncImageLoader.Loaders;
-using Avalonia.Media.Imaging;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using AsyncImageLoader.Core.Leases;
+using AsyncImageLoader.Core.Pipeline;
 
 namespace AsyncImageLoader.Avalonia.Demo.Services;
 
-public class LongLoader : BaseWebImageLoader {
-    public static LongLoader Instance { get; } = new LongLoader();
+public sealed class LongLoader : IAsyncImageLoader {
+    public static LongLoader Instance { get; } = new();
+    private readonly ImageLoaderPipeline _inner = ImageLoaderPipelineBuilder.Uncached().Build();
 
-    protected override async Task<Bitmap?> LoadAsync(string url) {
+    public async Task<IImageLease?> LoadAsync(ImageLoadRequest request, CancellationToken cancellationToken = default) {
         await Task.Delay(1000);
-        return await base.LoadAsync(url);
+        return await _inner.LoadAsync(request, cancellationToken);
+    }
+
+    public void Dispose() {
+        _inner.Dispose();
     }
 }

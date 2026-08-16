@@ -1,147 +1,148 @@
 using System;
-using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using AsyncImageLoader.Core.Caching;
+using AsyncImageLoader.Core.Pipeline;
 using AsyncImageLoader.Loaders;
-using Avalonia;
-using Avalonia.Media.Imaging;
-using Avalonia.Headless;
 using AwesomeAssertions;
+using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
 namespace AsyncImageLoader.Avalonia.Tests;
 
+#pragma warning disable CS0618 // Compatibility facade remains covered until removal.
 public sealed class RamCachedWebImageLoaderTests {
-    static RamCachedWebImageLoaderTests() {
-        AppBuilder.Configure<TestApplication>().UseHeadless(new AvaloniaHeadlessPlatformOptions()).SetupWithoutStarting();
-    }
+    private static readonly byte[] Png = Convert.FromBase64String(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
 
     [Fact]
     public async Task RequestsForTheSameUrlAreDeduplicated() {
-        using var loader = new TestLoader();
+        var response = new TaskCompletionSource<HttpResponseMessage>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var requestStarted = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var requests = 0;
+        using var client = new HttpClient(new AsyncHttpMessageHandler(async (_, cancellationToken) => {
+            if (Interlocked.Increment(ref requests) == 1)
+                requestStarted.SetResult(true);
+            return await response.Task.WaitAsync(cancellationToken);
+        }));
+        using var loader = new RamCachedWebImageLoader(client, false);
 
-        var first = loader.ProvideImageAsync("image");
-        var second = loader.ProvideImageAsync("image");
-        var images = await Task.WhenAll(first, second);
+        var firstTask = loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
+        await requestStarted.Task;
+        var secondTask = loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
+        response.SetResult(TestHttpMessageHandler.CreateResponse(Png));
+        using var first = await firstTask;
+        using var second = await secondTask;
 
-        images[0].Should().BeSameAs(images[1]);
-        loader.LoadCount.Should().Be(1);
+        first.Should().NotBeNull();
+        second.Should().NotBeNull();
+        first.Image.Should().BeSameAs(second.Image);
+        requests.Should().Be(1);
     }
 
     [Fact]
     public async Task FailedLoadsAreNotCached() {
-        using var loader = new TestLoader { ReturnNull = true };
+        var requests = 0;
+        using var client = new HttpClient(new TestHttpMessageHandler(_ => {
+            Interlocked.Increment(ref requests);
+            return TestHttpMessageHandler.CreateResponse(Array.Empty<byte>(), HttpStatusCode.NotFound);
+        }));
+        using var loader = new RamCachedWebImageLoader(client, false);
 
-        (await loader.ProvideImageAsync("image")).Should().BeNull();
-        (await loader.ProvideImageAsync("image")).Should().BeNull();
+        (await loader.LoadAsync(new ImageLoadRequest("https://example.test/missing.png"))).Should().BeNull();
+        (await loader.LoadAsync(new ImageLoadRequest("https://example.test/missing.png"))).Should().BeNull();
 
-        loader.LoadCount.Should().Be(2);
+        requests.Should().Be(2);
     }
 
     [Fact]
-    public async Task AbsoluteExpirationKeepsLiveBitmapReusableAsWeakReference() {
-        using var loader = new TestLoader(new RamCacheOptions {
-            AbsoluteExpiration = TimeSpan.FromMilliseconds(150)
-        });
+    public async Task ExpiredImageRemainsReusableWhileLeaseIsActive() {
+        var requests = 0;
+        using var client = new HttpClient(new TestHttpMessageHandler(_ => {
+            Interlocked.Increment(ref requests);
+            return TestHttpMessageHandler.CreateResponse(Png);
+        }));
+        var timeProvider = new FakeTimeProvider();
+        using var loader = new RamCachedWebImageLoader(client, false, new MemoryImageCacheOptions {
+            AbsoluteExpiration = TimeSpan.FromMilliseconds(100)
+        }, timeProvider);
+        using var first = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
 
-        var first = await loader.ProvideImageAsync("image").WaitAsync(TimeSpan.FromSeconds(2));
-        Thread.Sleep(350);
-        var second = await loader.ProvideImageAsync("image").WaitAsync(TimeSpan.FromSeconds(2));
+        timeProvider.Advance(TimeSpan.FromMilliseconds(250));
+        using var second = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
 
-        second.Should().BeSameAs(first);
-        loader.LoadCount.Should().Be(1);
+        first.Should().NotBeNull();
+        second.Should().NotBeNull();
+        second.Image.Should().BeSameAs(first.Image);
+        requests.Should().Be(1);
     }
 
     [Fact]
-    public async Task SlidingExpirationRenewsStrongRetentionOnAccess() {
-        using var loader = new TestLoader(new RamCacheOptions {
-            SlidingExpiration = TimeSpan.FromMilliseconds(150)
-        });
+    public async Task ExpiredImageIsReloadedAfterLastLeaseIsReleased() {
+        var requests = 0;
+        using var client = new HttpClient(new TestHttpMessageHandler(_ => {
+            Interlocked.Increment(ref requests);
+            return TestHttpMessageHandler.CreateResponse(Png);
+        }));
+        var timeProvider = new FakeTimeProvider();
+        using var loader = new RamCachedWebImageLoader(client, false, new MemoryImageCacheOptions {
+            AbsoluteExpiration = TimeSpan.FromMilliseconds(100)
+        }, timeProvider);
+        var first = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
+        first!.Dispose();
 
-        var first = await loader.ProvideImageAsync("image");
-        Thread.Sleep(80);
-        var second = await loader.ProvideImageAsync("image");
-        Thread.Sleep(80);
-        var third = await loader.ProvideImageAsync("image");
+        timeProvider.Advance(TimeSpan.FromMilliseconds(250));
+        using var second = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
 
-        second.Should().BeSameAs(first);
-        third.Should().BeSameAs(first);
-        loader.LoadCount.Should().Be(1);
+        second.Should().NotBeNull();
+        requests.Should().Be(2);
     }
 
     [Fact]
-    public async Task AbsoluteExpirationWinsOverSlidingExpiration() {
-        using var loader = new TestLoader(new RamCacheOptions {
-            AbsoluteExpiration = TimeSpan.FromMilliseconds(180),
-            SlidingExpiration = TimeSpan.FromMilliseconds(500)
-        });
+    public async Task ClearRamCacheReloadsImageWithoutInvalidatingActiveLease() {
+        var requests = 0;
+        using var client = new HttpClient(new TestHttpMessageHandler(_ => {
+            Interlocked.Increment(ref requests);
+            return TestHttpMessageHandler.CreateResponse(Png);
+        }));
+        using var loader = new RamCachedWebImageLoader(client, false);
+        using var first = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
 
-        var first = await loader.ProvideImageAsync("image");
-        Thread.Sleep(100);
-        (await loader.ProvideImageAsync("image")).Should().BeSameAs(first);
-        Thread.Sleep(180);
-        (await loader.ProvideImageAsync("image")).Should().BeSameAs(first);
+        loader.ClearRamCache();
+        first!.Image.Size.Width.Should().Be(1);
+        using var second = await loader.LoadAsync(new ImageLoadRequest("https://example.test/image.png"));
 
-        loader.LoadCount.Should().Be(1);
-    }
-
-    [Fact]
-    public async Task SlidingExpirationDoesNotRestoreStrongRetentionAfterAbsoluteExpiration() {
-        using var loader = new TestLoader(new RamCacheOptions {
-            AbsoluteExpiration = TimeSpan.FromMilliseconds(150),
-            SlidingExpiration = TimeSpan.FromMilliseconds(40)
-        });
-
-        var first = await loader.ProvideImageAsync("image");
-        Thread.Sleep(250);
-
-        (await loader.ProvideImageAsync("image")).Should().BeSameAs(first);
-        Thread.Sleep(100);
-        (await loader.ProvideImageAsync("image")).Should().BeSameAs(first);
-
-        loader.LoadCount.Should().Be(1);
+        second.Should().NotBeNull();
+        second.Image.Should().NotBeSameAs(first.Image);
+        requests.Should().Be(2);
     }
 
     [Fact]
     public void InvalidExpirationIsRejected() {
-        var action = () => new RamCachedWebImageLoader(new RamCacheOptions {
+        var action = () => new RamCachedWebImageLoader(new MemoryImageCacheOptions {
             SlidingExpiration = TimeSpan.Zero
         });
 
         action.Should().Throw<ArgumentOutOfRangeException>();
     }
 
-    [Fact]
-    public void HttpClientConstructorAcceptsCacheOptions() {
-        using var loader = new RamCachedWebImageLoader(
-            new HttpClient(),
-            false,
-            new RamCacheOptions { AbsoluteExpiration = TimeSpan.FromMinutes(1) });
+    private sealed class AsyncHttpMessageHandler : HttpMessageHandler {
+        private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;
 
-        loader.Should().NotBeNull();
-    }
+        public AsyncHttpMessageHandler(
+            Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler) {
+            _handler = handler;
+        }
 
-    private sealed class TestLoader : RamCachedWebImageLoader {
-        private static readonly byte[] Png = Convert.FromBase64String(
-            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
-
-        public TestLoader(RamCacheOptions? options = null) : base(options) { }
-
-        private int _loadCount;
-
-        public int LoadCount => _loadCount;
-        public bool ReturnNull { get; set; }
-
-        protected override Task<Bitmap?> LoadAsync(string url) {
-            Interlocked.Increment(ref _loadCount);
-            if (ReturnNull)
-                return Task.FromResult<Bitmap?>(null);
-
-            using var stream = new MemoryStream(Png);
-            return Task.FromResult<Bitmap?>(new Bitmap(stream));
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) {
+            return _handler(request, cancellationToken);
         }
     }
-
-    private sealed class TestApplication : Application { }
 }
+#pragma warning restore CS0618

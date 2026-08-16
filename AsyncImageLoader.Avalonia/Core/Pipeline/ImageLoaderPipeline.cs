@@ -1,0 +1,171 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using AsyncImageLoader.Core.Caching;
+using AsyncImageLoader.Core.Decoding;
+using AsyncImageLoader.Core.Leases;
+using AsyncImageLoader.Core.Sources;
+using AsyncImageLoader.Core.Transport;
+using Avalonia.Media;
+
+namespace AsyncImageLoader.Core.Pipeline;
+
+/// <summary>
+/// Composes source resolution, transport, decoding and image caches.
+/// </summary>
+public sealed class ImageLoaderPipeline : IAsyncImageLoader {
+    private readonly IImageSourceResolver _sourceResolver;
+    private readonly IImageTransport _transport;
+    private readonly IBitmapDecoder _decoder;
+    private readonly IImageMemoryCache _memoryCache;
+    private readonly IImageByteCache? _byteCache;
+    private readonly IReadOnlyList<IDisposable> _ownedResources;
+    private bool _disposed;
+
+    /// <summary>
+    /// Initializes an image loading pipeline.
+    /// </summary>
+    public ImageLoaderPipeline(
+        IImageSourceResolver sourceResolver,
+        IImageTransport transport,
+        IBitmapDecoder decoder,
+        IImageMemoryCache memoryCache,
+        IImageByteCache? byteCache = null)
+        : this(sourceResolver, transport, decoder, memoryCache, byteCache, Array.Empty<IDisposable>()) {
+    }
+
+    internal ImageLoaderPipeline(
+        IImageSourceResolver sourceResolver,
+        IImageTransport transport,
+        IBitmapDecoder decoder,
+        IImageMemoryCache memoryCache,
+        IImageByteCache? byteCache,
+        IReadOnlyList<IDisposable> ownedResources) {
+        _sourceResolver = sourceResolver ?? throw new ArgumentNullException(nameof(sourceResolver));
+        _transport = transport ?? throw new ArgumentNullException(nameof(transport));
+        _decoder = decoder ?? throw new ArgumentNullException(nameof(decoder));
+        _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
+        _byteCache = byteCache;
+        _ownedResources = ownedResources ?? throw new ArgumentNullException(nameof(ownedResources));
+    }
+
+    /// <summary>
+    /// Loads and leases an image for the specified request.
+    /// </summary>
+    public Task<IImageLease?> LoadAsync(
+        ImageLoadRequest request,
+        CancellationToken cancellationToken = default) {
+        if (request is null)
+            throw new ArgumentNullException(nameof(request));
+
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(ImageLoaderPipeline));
+
+        return _memoryCache.GetOrCreateAsync(
+            CreateCacheKey(request),
+            token => LoadImageAsync(request, token),
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Releases pipeline-owned cache resources.
+    /// </summary>
+    public void Dispose() {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        _memoryCache.Dispose();
+        foreach (var resource in _ownedResources)
+            resource.Dispose();
+    }
+
+    /// <summary>
+    /// Clears unleased decoded images from the memory cache.
+    /// </summary>
+    public void ClearMemoryCache() {
+        _memoryCache.Clear();
+    }
+
+    private async Task<IImage?> LoadImageAsync(
+        ImageLoadRequest request,
+        CancellationToken cancellationToken) {
+        using var resolved = await _sourceResolver.ResolveAsync(request, cancellationToken)
+            .ConfigureAwait(false);
+        if (resolved is not null)
+            return await _decoder.DecodeAsync(resolved.Stream, cancellationToken).ConfigureAwait(false);
+
+        using var encoded = await GetExternalDataAsync(request, cancellationToken).ConfigureAwait(false);
+        if (encoded is null)
+            return null;
+
+        return await _decoder.DecodeAsync(encoded.Stream, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<ResolvedImageSource?> GetExternalDataAsync(
+        ImageLoadRequest request,
+        CancellationToken cancellationToken) {
+        if (_byteCache is not null && IsHttpSource(request.Source)) {
+            var cached = await _byteCache.GetAsync(CreateCacheKey(request), cancellationToken).ConfigureAwait(false);
+            if (cached is not null)
+                return new ResolvedImageSource(cached);
+        }
+
+        Stream? responseStream;
+        try {
+            responseStream = await _transport.GetAsync(request, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+            throw;
+        }
+        catch (Exception) {
+            return null;
+        }
+        if (responseStream is null)
+            return null;
+
+        if (_byteCache is null || !IsHttpSource(request.Source))
+            return new ResolvedImageSource(responseStream);
+
+        var buffered = new MemoryStream();
+        try {
+            await responseStream.CopyToAsync(buffered, cancellationToken).ConfigureAwait(false);
+            responseStream.Dispose();
+            buffered.Position = 0;
+
+            if (_byteCache is not null && IsHttpSource(request.Source)) {
+                try {
+                    await _byteCache.SetAsync(CreateCacheKey(request), buffered, cancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) {
+                    throw;
+                }
+                catch (IOException) {
+                    // Persistence is best effort; the downloaded image remains usable.
+                }
+                catch (UnauthorizedAccessException) {
+                    // Persistence is best effort; the downloaded image remains usable.
+                }
+            }
+
+            buffered.Position = 0;
+            return new ResolvedImageSource(buffered);
+        }
+        catch {
+            await buffered.DisposeAsync();
+            await responseStream.DisposeAsync();
+            throw;
+        }
+    }
+
+    private static string CreateCacheKey(ImageLoadRequest request) {
+        return request.Source;
+    }
+
+    private static bool IsHttpSource(string source) {
+        return Uri.TryCreate(source, UriKind.Absolute, out var uri) &&
+               (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+    }
+}

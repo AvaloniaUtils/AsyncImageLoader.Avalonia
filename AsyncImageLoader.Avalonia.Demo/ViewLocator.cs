@@ -1,7 +1,7 @@
 using System;
+using AsyncImageLoader.Avalonia.Demo.ViewModels;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using AsyncImageLoader.Avalonia.Demo.ViewModels;
 
 namespace AsyncImageLoader.Avalonia.Demo;
 
@@ -13,9 +13,8 @@ public class ViewLocator : IDataTemplate {
         if (type != null) {
             return (Control)Activator.CreateInstance(type)!;
         }
-        else {
-            return new TextBlock { Text = "Not Found: " + name };
-        }
+
+        return new TextBlock { Text = "Not Found: " + name };
     }
 
     public bool Match(object? data) {

@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 using System.Threading;
-using AsyncImageLoader.Loaders;
+using System.Threading.Tasks;
+using AsyncImageLoader.Core.Leases;
+using AsyncImageLoader.Core.Pipeline;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Media.Imaging;
-using System.Collections.Concurrent;
 using Avalonia.Logging;
+using Avalonia.VisualTree;
 
 namespace AsyncImageLoader;
 
@@ -21,78 +21,112 @@ public static class ImageLoader {
     public static readonly AttachedProperty<bool> IsLoadingProperty =
         AvaloniaProperty.RegisterAttached<Image, bool>("IsLoading", typeof(ImageLoader));
 
+    private static readonly ConditionalWeakTable<Image, ImageState> States = new();
+
     static ImageLoader() {
         SourceProperty.Changed.AddClassHandler<Image>(OnSourceChanged);
         Logger = Avalonia.Logging.Logger.TryGet(LogEventLevel.Error, AsyncImageLoaderLogArea);
     }
 
-    public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
-
-    private static readonly ConcurrentDictionary<Image, CancellationTokenSource> PendingOperations = new();
+    public static IAsyncImageLoader AsyncImageLoader { get; set; } =
+        ImageLoaderPipelineBuilder.RamCached().Build();
 
     private static async void OnSourceChanged(Image sender, AvaloniaPropertyChangedEventArgs args) {
-        var url = args.GetNewValue<string?>();
+        var source = args.GetNewValue<string?>();
+        var state = States.GetValue(sender, static _ => new ImageState());
+        state.EnsureSubscribed(sender);
 
-        // Cancel/Add new pending operation
-        var cts = PendingOperations.AddOrUpdate(sender, new CancellationTokenSource(),
-            (x, y) => {
-                y.Cancel();
-                return new CancellationTokenSource();
-            });
-
-        if (string.IsNullOrWhiteSpace(url)) {
-            ((ICollection<KeyValuePair<Image, CancellationTokenSource>>)PendingOperations).Remove(
-                new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
+        if (!sender.IsAttachedToVisualTree()) {
             sender.Source = null;
+            state.Coordinator.Cancel();
+            SetIsLoading(sender, false);
             return;
         }
 
-        SetIsLoading(sender, true);
+        await LoadAsync(sender, source, state);
+    }
 
-        var bitmap = await Task.Run(async () => {
-            try {
-                // A small delay allows to cancel early if the image goes out of screen too fast (eg. scrolling)
-                // The Bitmap constructor is expensive and cannot be cancelled
-                await Task.Delay(10, cts.Token);
+    private static void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs args) {
+        if (sender is not Image image || !States.TryGetValue(image, out var state))
+            return;
 
-                if (AsyncImageLoader is IAdvancedAsyncImageLoader advancedLoader) {
-                    return await advancedLoader.ProvideImageAsync(url, TopLevel.GetTopLevel(sender)?.StorageProvider);
+        _ = LoadAsync(image, GetSource(image), state);
+    }
+
+    private static void OnDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs args) {
+        if (sender is not Image image || !States.TryGetValue(image, out var state))
+            return;
+
+        image.Source = null;
+        state.Coordinator.Cancel();
+        SetIsLoading(image, false);
+    }
+
+    private static async Task LoadAsync(Image image, string? source, ImageState state) {
+        SetIsLoading(image, !string.IsNullOrWhiteSpace(source));
+        image.Source = null;
+        var request = state.Coordinator.Begin();
+
+        if (string.IsNullOrWhiteSpace(source)) {
+            state.Coordinator.Cancel();
+            return;
+        }
+
+        IImageLease? lease = null;
+        try {
+            await Task.Delay(10, request.CancellationToken);
+            lease = await AsyncImageLoader.LoadAsync(new ImageLoadRequest(
+                source,
+                storageProvider: TopLevel.GetTopLevel(image)?.StorageProvider),
+                request.CancellationToken);
+        }
+        catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested) {
+        }
+        catch (Exception e) {
+            Logger?.Log(LogEventLevel.Error, "ImageLoader image resolution failed: {0}", e);
+        }
+
+        if (!state.Coordinator.TrySetLease(request, lease))
+            return;
+
+        if (lease is not null)
+            image.Source = lease.Image;
+
+        if (state.Coordinator.TryComplete(request))
+            SetIsLoading(image, false);
+    }
+
+    public static string? GetSource(Image element) => element.GetValue(SourceProperty);
+
+    public static void SetSource(Image element, string? value) => element.SetValue(SourceProperty, value);
+
+    public static bool GetIsLoading(Image element) => element.GetValue(IsLoadingProperty);
+
+    private static void SetIsLoading(Image element, bool value) => element.SetValue(IsLoadingProperty, value);
+
+    private sealed class ImageState {
+        private int _subscribed;
+
+        public ImageRequestCoordinator Coordinator { get; } = new();
+
+        public void EnsureSubscribed(Image image) {
+            if (Interlocked.Exchange(ref _subscribed, 1) != 0)
+                return;
+
+            image.AttachedToVisualTree += OnAttachedToVisualTree;
+            image.DetachedFromVisualTree += OnDetachedFromVisualTree;
+        }
+
+        ~ImageState() {
+            var coordinator = Coordinator;
+            ThreadPool.QueueUserWorkItem(static state => {
+                try {
+                    ((ImageRequestCoordinator)state!).Dispose();
                 }
-
-                return await AsyncImageLoader.ProvideImageAsync(url);
-            }
-            catch (TaskCanceledException) {
-                return null;
-            }
-            catch (Exception e) {
-                Logger?.Log(LogEventLevel.Error, "ImageLoader image resolution failed: {0}", e);
-
-                return null;
-            }
-        });
-
-        if (bitmap != null && !cts.Token.IsCancellationRequested)
-            sender.Source = bitmap!;
-
-        // "It is not guaranteed to be thread safe by ICollection, but ConcurrentDictionary's implementation is. Additionally, we recently exposed this API for .NET 5 as a public ConcurrentDictionary.TryRemove"
-        ((ICollection<KeyValuePair<Image, CancellationTokenSource>>)PendingOperations).Remove(
-            new KeyValuePair<Image, CancellationTokenSource>(sender, cts));
-        SetIsLoading(sender, false);
-    }
-
-    public static string? GetSource(Image element) {
-        return element.GetValue(SourceProperty);
-    }
-
-    public static void SetSource(Image element, string? value) {
-        element.SetValue(SourceProperty, value);
-    }
-
-    public static bool GetIsLoading(Image element) {
-        return element.GetValue(IsLoadingProperty);
-    }
-
-    private static void SetIsLoading(Image element, bool value) {
-        element.SetValue(IsLoadingProperty, value);
+                catch {
+                    // A custom release callback must not escape a GC fallback.
+                }
+            }, coordinator);
+        }
     }
 }

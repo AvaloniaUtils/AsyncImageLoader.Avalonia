@@ -1,5 +1,8 @@
 ﻿using System;
-using AsyncImageLoader.Loaders;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using AsyncImageLoader.Core.Leases;
+using AsyncImageLoader.Core.Pipeline;
 using Avalonia;
 using Avalonia.Logging;
 using Avalonia.Media;
@@ -9,7 +12,9 @@ namespace AsyncImageLoader;
 
 public static class ImageBrushLoader {
     private static readonly ParametrizedLogger? Logger;
-    public static IAsyncImageLoader AsyncImageLoader { get; set; } = new RamCachedWebImageLoader();
+    public static IAsyncImageLoader AsyncImageLoader { get; set; } =
+        ImageLoaderPipelineBuilder.RamCached().Build();
+    private static readonly ConditionalWeakTable<ImageBrush, BrushState> States = new();
 
     static ImageBrushLoader() {
         SourceProperty.Changed.AddClassHandler<ImageBrush>(OnSourceChanged);
@@ -21,24 +26,40 @@ public static class ImageBrushLoader {
         if (oldValue == newValue)
             return;
 
+        var state = States.GetValue(imageBrush, static _ => new BrushState());
         SetIsLoading(imageBrush, true);
+        imageBrush.Source = null;
+        var request = state.Coordinator.Begin();
 
-        Bitmap? bitmap = null;
+        IImageBrushSource? image = null;
+        IImageLease? lease = null;
         try {
-            if (!string.IsNullOrWhiteSpace(newValue))
-                bitmap = await AsyncImageLoader.ProvideImageAsync(newValue!);
+            if (!string.IsNullOrWhiteSpace(newValue)) {
+                lease = await AsyncImageLoader.LoadAsync(new ImageLoadRequest(newValue), request.CancellationToken);
+                image = lease?.Image as IImageBrushSource;
+                if (lease is not null && image is null) {
+                    lease.Dispose();
+                    lease = null;
+                }
+            }
 
-            if (bitmap == null && GetFallbackImage(imageBrush) is Bitmap fallback)
-                bitmap = fallback;
+            if (image == null && GetFallbackImage(imageBrush) is { } fallback)
+                image = fallback;
+        }
+        catch (OperationCanceledException) when (request.CancellationToken.IsCancellationRequested) {
         }
         catch (Exception e) {
             Logger?.Log("ImageBrushLoader", "ImageBrushLoader image resolution failed: {0}", e);
         }
 
-        if (GetSource(imageBrush) != newValue) return;
-        imageBrush.Source = bitmap;
+        if (state.Coordinator.TrySetLease(request, lease)) {
+            if (GetSource(imageBrush) == newValue) {
+                imageBrush.Source = image;
+            }
 
-        SetIsLoading(imageBrush, false);
+            if (state.Coordinator.TryComplete(request))
+                SetIsLoading(imageBrush, false);
+        }
     }
 
     public static readonly AttachedProperty<string?> SourceProperty =
@@ -87,5 +108,21 @@ public static class ImageBrushLoader {
 
     private static void SetIsLoading(ImageBrush element, bool value) {
         element.SetValue(IsLoadingProperty, value);
+    }
+
+    private sealed class BrushState {
+        public ImageRequestCoordinator Coordinator { get; } = new();
+
+        ~BrushState() {
+            var coordinator = Coordinator;
+            ThreadPool.QueueUserWorkItem(static state => {
+                try {
+                    ((ImageRequestCoordinator)state!).Dispose();
+                }
+                catch {
+                    // A custom release callback must not escape a GC fallback.
+                }
+            }, coordinator);
+        }
     }
 }
