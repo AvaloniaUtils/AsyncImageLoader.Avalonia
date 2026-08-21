@@ -188,9 +188,12 @@ public sealed class MemoryImageCache : IImageMemoryCache {
             if (_disposed)
                 return;
 
-            foreach (var pair in new List<KeyValuePair<string, Entry>>(_entries)) {
-                if (pair.Value.LeaseCount == 0 && pair.Value.LoadingTask is null && IsExpired(pair.Value))
-                    RemoveEntryLocked(pair.Key, pair.Value);
+            foreach (var pair in _entries) {
+                if (pair.Value.LeaseCount == 0 && pair.Value.LoadingTask is null && IsExpired(pair.Value)) {
+                    _entries.Remove(pair.Key);
+                    pair.Value.IsDetached = true;
+                    DisposeDetachedEntryIfUnused(pair.Value);
+                }
             }
         }
     }
@@ -215,15 +218,6 @@ public sealed class MemoryImageCache : IImageMemoryCache {
         var period = _options.AbsoluteExpiration ?? _options.SlidingExpiration ?? TimeSpan.FromMinutes(1);
         period = TimeSpan.FromTicks(Math.Max(period.Ticks / 2, TimeSpan.FromMilliseconds(100).Ticks));
         return period > TimeSpan.FromMinutes(1) ? TimeSpan.FromMinutes(1) : period;
-    }
-
-    private void RemoveEntryLocked(string key, Entry entry) {
-        if (!_entries.TryGetValue(key, out var current) || !ReferenceEquals(current, entry))
-            return;
-
-        _entries.Remove(key);
-        entry.IsDetached = true;
-        DisposeDetachedEntryIfUnused(entry);
     }
 
     private void DetachEntryLocked(string key, Entry entry) {
