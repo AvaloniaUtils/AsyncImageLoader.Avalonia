@@ -16,6 +16,7 @@ public sealed class MemoryImageCache : IImageMemoryCache {
     private readonly MemoryImageCacheOptions _options;
     private readonly TimeProvider _timeProvider;
     private readonly ITimer? _cleanupTimer;
+    private long _accessSequence;
     private bool _disposed;
 
     /// <summary>
@@ -129,6 +130,8 @@ public sealed class MemoryImageCache : IImageMemoryCache {
                 if (image is not null) {
                     entry.StrongSince = _timeProvider.GetUtcNow();
                     entry.LastAccess = entry.StrongSince;
+                    entry.LastAccessSequence = ++_accessSequence;
+                    EnforceMaxItemsLocked();
                 }
                 else {
                     DetachEntryLocked(key, entry);
@@ -180,7 +183,45 @@ public sealed class MemoryImageCache : IImageMemoryCache {
 
             if (entry.LeaseCount == 0 && (_disposed || entry.IsDetached || IsExpired(entry)))
                 DisposeDetachedEntryIfUnused(entry);
+
+            if (!_disposed)
+                EnforceMaxItemsLocked();
         }
+    }
+
+    private void EnforceMaxItemsLocked() {
+        if (_options.MaxItems is not { } maxItems)
+            return;
+
+        while (CountLoadedEntriesLocked() > maxItems) {
+            Entry? leastRecentlyUsed = null;
+            string? leastRecentlyUsedKey = null;
+            foreach (var pair in _entries) {
+                if (pair.Value.Image is null || pair.Value.LoadingTask is not null ||
+                    pair.Value.LeaseCount != 0 || pair.Value.WaiterCount != 0)
+                    continue;
+
+                if (leastRecentlyUsed is null || pair.Value.LastAccessSequence < leastRecentlyUsed.LastAccessSequence) {
+                    leastRecentlyUsed = pair.Value;
+                    leastRecentlyUsedKey = pair.Key;
+                }
+            }
+
+            if (leastRecentlyUsed is null)
+                return;
+
+            DetachEntryLocked(leastRecentlyUsedKey!, leastRecentlyUsed);
+        }
+    }
+
+    private int CountLoadedEntriesLocked() {
+        var count = 0;
+        foreach (var entry in _entries.Values) {
+            if (entry.Image is not null)
+                count++;
+        }
+
+        return count;
     }
 
     private void CleanupExpiredEntries(object? state) {
@@ -202,6 +243,7 @@ public sealed class MemoryImageCache : IImageMemoryCache {
         var now = _timeProvider.GetUtcNow();
         if (_options.SlidingExpiration is not null && !IsAbsoluteExpired(entry, now))
             entry.LastAccess = now;
+        entry.LastAccessSequence = ++_accessSequence;
     }
 
     private bool IsExpired(Entry entry) {
@@ -253,6 +295,7 @@ public sealed class MemoryImageCache : IImageMemoryCache {
         public int LeaseCount;
         public DateTimeOffset StrongSince;
         public DateTimeOffset LastAccess;
+        public long LastAccessSequence;
         public bool IsDetached;
     }
 }

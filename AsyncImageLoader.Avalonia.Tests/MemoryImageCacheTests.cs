@@ -257,6 +257,45 @@ public sealed class MemoryImageCacheTests {
     }
 
     [Fact]
+    public async Task MaxItemsEvictsLeastRecentlyUsedUnleasedImage() {
+        using var cache = new MemoryImageCache(new MemoryImageCacheOptions { MaxItems = 2 });
+        var loads = 0;
+        var first = await cache.GetOrCreateAsync("first", _ => CreateImageAsync(() => ++loads));
+        var firstImage = first!.Image;
+        first!.Dispose();
+        var second = await cache.GetOrCreateAsync("second", _ => CreateImageAsync(() => ++loads));
+        var secondImage = second!.Image;
+        second.Should().NotBeNull();
+        second.Dispose();
+        var firstAgainBeforeEviction = await cache.GetOrCreateAsync("first", _ => CreateImageAsync(() => ++loads));
+        firstAgainBeforeEviction!.Image.Should().BeSameAs(firstImage);
+        firstAgainBeforeEviction.Dispose();
+        using var third = await cache.GetOrCreateAsync("third", _ => CreateImageAsync(() => ++loads));
+        third.Should().NotBeNull();
+        using var secondAgain = await cache.GetOrCreateAsync("second", _ => CreateImageAsync(() => ++loads));
+
+        secondAgain!.Image.Should().NotBeSameAs(secondImage);
+        loads.Should().Be(4);
+    }
+
+    [Fact]
+    public async Task MaxItemsDoesNotEvictImageWithActiveLease() {
+        using var cache = new MemoryImageCache(new MemoryImageCacheOptions { MaxItems = 1 });
+        var loads = 0;
+        using var first = await cache.GetOrCreateAsync("first", _ => CreateImageAsync());
+        var firstImage = first!.Image;
+        using var second = await cache.GetOrCreateAsync("second", _ => CreateImageAsync(() => ++loads));
+
+        second!.Image.Should().NotBeNull();
+        first.Image.Should().BeSameAs(firstImage);
+        first.Dispose();
+
+        using var third = await cache.GetOrCreateAsync("third", _ => CreateImageAsync(() => ++loads));
+        third!.Image.Should().NotBeSameAs(firstImage);
+        loads.Should().Be(2);
+    }
+
+    [Fact]
     public async Task AbsoluteExpirationWinsOverSlidingExpiration() {
         var timeProvider = new FakeTimeProvider();
         using var cache = new MemoryImageCache(new MemoryImageCacheOptions {
@@ -299,6 +338,9 @@ public sealed class MemoryImageCacheTests {
         }));
         Assert.Throws<ArgumentOutOfRangeException>(() => new MemoryImageCache(new MemoryImageCacheOptions {
             SlidingExpiration = TimeSpan.Zero
+        }));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new MemoryImageCache(new MemoryImageCacheOptions {
+            MaxItems = 0
         }));
     }
 

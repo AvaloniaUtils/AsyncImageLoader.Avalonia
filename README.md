@@ -74,6 +74,7 @@ If you need a brush you can use Avalonia's `ImageBrush` with `ImageBrushLoader.S
 using AsyncImageLoader.Core;
 
 var loader = ImageLoaderPipelineBuilder.RamCached(new MemoryImageCacheOptions {
+    MaxItems = 100,
     AbsoluteExpiration = TimeSpan.FromMinutes(10),
     SlidingExpiration = TimeSpan.FromMinutes(2)
 })

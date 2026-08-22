@@ -17,6 +17,11 @@ public sealed class MemoryImageCacheOptions {
     public TimeSpan? SlidingExpiration { get; init; }
 
     /// <summary>
+    /// Gets the maximum number of images retained by the cache.
+    /// </summary>
+    public uint? MaxItems { get; init; }
+
+    /// <summary>
     /// Validates cache options.
     /// </summary>
     public void Validate() {
@@ -25,5 +30,8 @@ public sealed class MemoryImageCacheOptions {
 
         if (SlidingExpiration is { } sliding && sliding <= TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(SlidingExpiration));
+
+        if (MaxItems is 0)
+            throw new ArgumentOutOfRangeException(nameof(MaxItems));
     }
 }
